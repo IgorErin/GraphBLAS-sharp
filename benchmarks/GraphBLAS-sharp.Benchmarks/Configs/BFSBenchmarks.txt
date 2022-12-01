@@ -1,2 +1,6 @@
-arc130.mtx
-webbase-1M.mtx
+coAuthorsCiteseer.mtx
+coPapersDBLP.mtx
+hollywood-2009.mtx
+roadNet-CA.mtx
+cit-Patents.mtx
+indochina-2004.mtx

@@ -16,7 +16,8 @@ let main argv =
                              //typeof<BFSBenchmarks>
                              //typeof<MxvBenchmarks>
                              //typeof<TransposeBenchmarks>
-                              |]
+                             typeof<BFSBenchmarks4IntWithDataTransfer>
+                             typeof<BFSBenchmarks4IntWithoutDataTransfer> |]
 
     benchmarks.Run argv |> ignore
     0

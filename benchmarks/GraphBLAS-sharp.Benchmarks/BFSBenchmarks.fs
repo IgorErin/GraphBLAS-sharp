@@ -52,7 +52,7 @@ type BFSBenchmarks<'elem when 'elem : struct>(
     [<ParamsSource("AvaliableContexts")>]
     member val OclContextInfo = Unchecked.defaultof<Utils.BenchmarkContext * int> with get, set
 
-    [<ParamsSource("InputMatricesProvider")>]
+    [<ParamsSource("InputMatrixProvider")>]
     member val InputMatrixReader = Unchecked.defaultof<MtxReader> with get, set
 
     member this.OclContext:ClContext = (fst this.OclContextInfo).ClContext
@@ -65,7 +65,7 @@ type BFSBenchmarks<'elem when 'elem : struct>(
 
     static member AvaliableContexts = Utils.avaliableContexts
 
-    static member InputMatricesProviderBuilder pathToConfig =
+    static member InputMatrixProviderBuilder pathToConfig =
         let datasetFolder = "BFS"
         pathToConfig
         |> Utils.getMatricesFilenames
@@ -178,7 +178,7 @@ type BFSBenchmarks4IntWithoutDataTransfer() =
         0)
 
     static member InputMatrixProvider =
-        BFSBenchmarks<_>.InputMatricesProviderBuilder "BFSBenchmarks4Int.txt"
+        BFSBenchmarks<_>.InputMatrixProviderBuilder "BFSBenchmarks.txt"
 
 type BFSBenchmarks4IntWithDataTransfer() =
 
@@ -188,4 +188,4 @@ type BFSBenchmarks4IntWithDataTransfer() =
         0)
 
     static member InputMatrixProvider =
-        BFSBenchmarks<_>.InputMatricesProviderBuilder "BFSBenchmarks4Int.txt"
+        BFSBenchmarks<_>.InputMatrixProviderBuilder "BFSBenchmarks.txt"
