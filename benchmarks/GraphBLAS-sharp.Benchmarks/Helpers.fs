@@ -42,6 +42,31 @@ type CommonConfig() =
         )
         |> ignore
 
+type MatrixColumn(columnName: string, getShape: MtxReader -> int) =
+    interface IColumn with
+        member this.AlwaysShow: bool = true
+        member this.Category: ColumnCategory = ColumnCategory.Params
+        member this.ColumnName: string = columnName
+
+        member this.GetValue(summary: Summary, benchmarkCase: BenchmarkCase) : string =
+            let inputMatrix =
+                benchmarkCase.Parameters.["InputMatrixReader"] :?> MtxReader
+
+            sprintf "%i" <| getShape inputMatrix
+
+        member this.GetValue(summary: Summary, benchmarkCase: BenchmarkCase, style: SummaryStyle) : string =
+            (this :> IColumn).GetValue(summary, benchmarkCase)
+
+        member this.Id: string =
+            sprintf "%s.%s" "MatrixColumn" columnName
+
+        member this.IsAvailable(summary: Summary) : bool = true
+        member this.IsDefault(summary: Summary, benchmarkCase: BenchmarkCase) : bool = false
+        member this.IsNumeric: bool = true
+        member this.Legend: string = sprintf "%s of input matrix" columnName
+        member this.PriorityInCategory: int = 1
+        member this.UnitType: UnitType = UnitType.Size
+
 type MatrixShapeColumn(columnName: string, getShape: (MtxReader * MtxReader) -> int) =
     interface IColumn with
         member this.AlwaysShow: bool = true
@@ -58,7 +83,7 @@ type MatrixShapeColumn(columnName: string, getShape: (MtxReader * MtxReader) -> 
             (this :> IColumn).GetValue(summary, benchmarkCase)
 
         member this.Id: string =
-            sprintf "%s.%s" "MatrixShapeColumn" columnName
+            sprintf "%s.%s" "MatrixColumn" columnName
 
         member this.IsAvailable(summary: Summary) : bool = true
         member this.IsDefault(summary: Summary, benchmarkCase: BenchmarkCase) : bool = false

@@ -23,6 +23,7 @@
     <!--Compile Include="BenchmarksTranspose.fs" /-->
     <Compile Include="BenchmarksMathNET.fs" />
     <Compile Include="Program.fs" />
+    <Compile Include="BFSBenchmarks.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>
