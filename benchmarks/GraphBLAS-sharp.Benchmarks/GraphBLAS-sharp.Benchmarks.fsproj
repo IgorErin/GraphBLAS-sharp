@@ -24,6 +24,7 @@
     <Compile Include="BenchmarksMathNET.fs" />
     <Compile Include="BFSBenchmarks.fs" />
     <Compile Include="Program.fs" />
+    <Content Include="Datasets/BFS/coAuthorsCiteseer.mtx" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

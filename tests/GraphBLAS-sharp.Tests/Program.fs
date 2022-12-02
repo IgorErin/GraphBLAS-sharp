@@ -2,11 +2,12 @@ open Expecto
 
 open Brahma.FSharp.OpenCL
 open GraphBLAS.FSharp.Backend.Common
+open GraphBLAS.FSharp.Tests
 open OpenCL.Net
 open GraphBLAS.FSharp
 //open GraphBLAS.FSharp.Algorithms
 open GraphBLAS.FSharp.IO
-
+open Brahma.FSharp
 [<Tests>]
 let allTests =
     testList
@@ -44,7 +45,7 @@ let allTests =
     |> testSequenced
 
 [<EntryPoint>]
-let main argv = allTests |> runTestsWithCLIArgs [] argv
+let main argv =  allTests |> runTestsWithCLIArgs [] argv
 
 // graphblas {
 //     let! matrix =

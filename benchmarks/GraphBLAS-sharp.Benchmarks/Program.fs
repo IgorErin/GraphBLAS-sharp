@@ -20,4 +20,5 @@ let main argv =
                              typeof<BFSBenchmarks4IntWithoutDataTransfer> |]
 
     benchmarks.Run argv |> ignore
+
     0

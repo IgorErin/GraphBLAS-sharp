@@ -11,6 +11,7 @@ open Brahma.FSharp
 open Microsoft.FSharp.Control
 open Backend.Common.StandardOperations
 open Backend.Algorithms.BFS
+open Microsoft.FSharp.Core
 
 type BFSConfig() =
     inherit ManualConfig()
@@ -27,10 +28,10 @@ type BFSConfig() =
                     | Array -> 0
             )
             :> IColumn,
-            TEPSColumn() :> IColumn,
             StatisticColumn.Min,
             StatisticColumn.Max
         )
+        //TODO()
         |> ignore
 
 [<AbstractClass>]
@@ -40,6 +41,7 @@ type BFSConfig() =
 type BFSBenchmarks<'elem when 'elem : struct>(
     buildFunToBenchmark,
     converter: string -> 'elem,
+    binaryConverter,
     vertex: int)
     =
 
@@ -86,6 +88,10 @@ type BFSBenchmarks<'elem when 'elem : struct>(
         | Some x -> x
 
     member this.ReadMatrix (reader:MtxReader) =
+        let converter =
+            match reader.Field with
+            | Pattern -> binaryConverter
+            | _ -> converter
 
         reader.ReadMatrix converter
 
@@ -114,11 +120,13 @@ type BFSBenchmarks<'elem when 'elem : struct>(
 type BFSBenchmarksWithoutDataTransfer<'elem when 'elem : struct>(
     buildFunToBenchmark,
     converter: string -> 'elem,
+    boolConverter,
     vertex) =
 
     inherit BFSBenchmarks<'elem>(
         buildFunToBenchmark,
         converter,
+        boolConverter,
         vertex)
 
     [<GlobalSetup>]
@@ -142,11 +150,13 @@ type BFSBenchmarksWithoutDataTransfer<'elem when 'elem : struct>(
 type BFSBenchmarksWithDataTransfer<'elem when 'elem : struct>(
     buildFunToBenchmark,
     converter: string -> 'elem,
+    boolConverter,
     vertex) =
 
     inherit BFSBenchmarks<'elem>(
         buildFunToBenchmark,
         converter,
+        boolConverter,
         vertex)
 
     [<GlobalSetup>]
@@ -174,7 +184,8 @@ type BFSBenchmarks4IntWithoutDataTransfer() =
 
     inherit BFSBenchmarksWithoutDataTransfer<int>(
         (fun context -> singleSource context intSum intMul <@ (+) @>),
-        int,
+        int32,
+        (fun _ -> 1),
         0)
 
     static member InputMatrixProvider =
@@ -184,7 +195,8 @@ type BFSBenchmarks4IntWithDataTransfer() =
 
     inherit BFSBenchmarksWithDataTransfer<int>(
         (fun context -> singleSource context intSum intMul <@ (+) @>),
-        int,
+        int32,
+        (fun _ -> 1),
         0)
 
     static member InputMatrixProvider =
