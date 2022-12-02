@@ -11,7 +11,6 @@ module BFS =
         (clContext: ClContext)
         (add: Expr<int option -> int option -> int option>)
         (mul: Expr<'a option -> 'b option -> int option>)
-        (addNumeric: Expr<int -> int -> int>)
         workGroupSize
         =
 
@@ -31,8 +30,8 @@ module BFS =
         let fillSubVector =
             Vector.standardFillSubVector<int, int> clContext workGroupSize
 
-        let reduce =
-            Vector.reduce clContext workGroupSize addNumeric
+        let containsNonZeros =
+            DenseVector.DenseVector.containsNonZero clContext workGroupSize
 
         fun (queue: MailboxProcessor<Msg>) (matrix: CSRMatrix<'a>) (source: int) ->
             let vertexCount = matrix.RowCount
@@ -67,12 +66,12 @@ module BFS =
                     frontier <- newFrontier |> ClVectorDense
                     levels <- newLevels
 
-                    let frontierSum = Array.zeroCreate 1
-                    let sum = reduce queue frontier
+                    let stopCellHost = Array.zeroCreate 1
+                    let stopCell = containsNonZeros queue f
 
-                    queue.PostAndReply(fun ch -> Msg.CreateToHostMsg(sum, frontierSum, ch))
+                    queue.PostAndReply(fun ch -> Msg.CreateToHostMsg(stopCell, stopCellHost, ch))
                     |> ignore
 
-                    stop <- frontierSum.[0] = 0
+                    stop <- stopCellHost.[0]
 
             levels

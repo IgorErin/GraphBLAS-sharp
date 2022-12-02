@@ -2,6 +2,9 @@ namespace GraphBLAS.FSharp.Benchmarks
 
 open System.IO
 open BenchmarkDotNet.Attributes
+open BenchmarkDotNet.Jobs
+open BenchmarkDotNet.Toolchains.InProcess.Emit
+open BenchmarkDotNet.Toolchains.InProcess.NoEmit
 open GraphBLAS.FSharp
 open GraphBLAS.FSharp.Backend
 open GraphBLAS.FSharp.IO
@@ -32,6 +35,16 @@ type BFSConfig() =
             StatisticColumn.Max
         )
         //TODO()
+        |> ignore
+
+        base.AddJob(
+            Job
+                .Dry
+                .WithToolchain(InProcessEmitToolchain.Instance)
+                .WithWarmupCount(3)
+                .WithIterationCount(10)
+                .WithInvocationCount(3)
+        )
         |> ignore
 
 [<AbstractClass>]
@@ -87,14 +100,6 @@ type BFSBenchmarks<'elem when 'elem : struct>(
             x
         | Some x -> x
 
-    member this.ReadMatrix (reader:MtxReader) =
-        let converter =
-            match reader.Field with
-            | Pattern -> binaryConverter
-            | _ -> converter
-
-        reader.ReadMatrix converter
-
     member this.RunBFS() =
         this.ResultLevels <- this.FunToBenchmark this.Processor matrix vertex
 
@@ -104,7 +109,12 @@ type BFSBenchmarks<'elem when 'elem : struct>(
     member this.ClearResult() = this.ResultLevels.Dispose this.Processor
 
     member this.ReadMatrix() =
-        matrixHost <- this.InputMatrixReader.ReadMatrix converter
+        let converter =
+            match this.InputMatrixReader.Field with
+            | Pattern -> binaryConverter
+            | _ -> converter
+
+        matrixHost <- this.InputMatrixReader.ReadMatrix binaryConverter
 
     member this.LoadMatrixToGPU() =
         matrix <- GraphBLAS.FSharp.CSRMatrix<int>.ToBackend this.OclContext matrixHost
@@ -183,7 +193,7 @@ type BFSBenchmarksWithDataTransfer<'elem when 'elem : struct>(
 type BFSBenchmarks4IntWithoutDataTransfer() =
 
     inherit BFSBenchmarksWithoutDataTransfer<int>(
-        (fun context -> singleSource context intSum intMul <@ (+) @>),
+        (fun context -> singleSource context intSum intMul),
         int32,
         (fun _ -> 1),
         0)
@@ -194,7 +204,7 @@ type BFSBenchmarks4IntWithoutDataTransfer() =
 type BFSBenchmarks4IntWithDataTransfer() =
 
     inherit BFSBenchmarksWithDataTransfer<int>(
-        (fun context -> singleSource context intSum intMul <@ (+) @>),
+        (fun context -> singleSource context intSum intMul),
         int32,
         (fun _ -> 1),
         0)
