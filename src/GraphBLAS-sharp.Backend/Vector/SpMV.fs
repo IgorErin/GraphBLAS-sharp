@@ -2,12 +2,11 @@ namespace GraphBLAS.FSharp.Backend
 
 open Brahma.FSharp
 open GraphBLAS.FSharp.Backend
-open GraphBLAS.FSharp.Backend.ArraysExtensions
 open GraphBLAS.FSharp.Backend.Common
 open Microsoft.FSharp.Quotations
 
 module SpMV =
-    let run
+    let runTo
         (clContext: ClContext)
         (add: Expr<'c option -> 'c option -> 'c option>)
         (mul: Expr<'a option -> 'b option -> 'c option>)
@@ -95,7 +94,7 @@ module SpMV =
         let multiplyValues = clContext.Compile multiplyValues
         let reduceValuesByRows = clContext.Compile reduceValuesByRows
 
-        fun (queue: MailboxProcessor<_>) (matrix: CSRMatrix<'a>) (vector: ClArray<'b option>) ->
+        fun (queue: MailboxProcessor<_>) (matrix: CSRMatrix<'a>) (vector: ClArray<'b option>) (result: ClArray<'b option>) ->
 
             let matrixLength = matrix.Values.Length
 
@@ -129,14 +128,6 @@ module SpMV =
 
             queue.Post(Msg.CreateRunMsg<_, _>(multiplyValues))
 
-            let outputArray =
-                clContext.CreateClArray<'c option>(
-                    matrix.RowCount,
-                    deviceAccessMode = DeviceAccessMode.ReadWrite,
-                    hostAccessMode = HostAccessMode.NotAccessible,
-                    allocationMode = AllocationMode.Default
-                )
-
             let reduceValuesByRows = reduceValuesByRows.GetKernel()
 
             queue.Post(
@@ -147,11 +138,31 @@ module SpMV =
                             matrix.RowCount
                             intermediateArray
                             matrix.RowPointers
-                            outputArray)
+                            result)
             )
 
             queue.Post(Msg.CreateRunMsg<_, _>(reduceValuesByRows))
 
             queue.Post(Msg.CreateFreeMsg intermediateArray)
 
-            outputArray
+    let run
+        (clContext: ClContext)
+        (add: Expr<'c option -> 'c option -> 'c option>)
+        (mul: Expr<'a option -> 'b option -> 'c option>)
+        workGroupSize
+        =
+        let runTo = runTo clContext add mul workGroupSize
+
+        fun (queue: MailboxProcessor<_>) (matrix: CSRMatrix<'a>) (vector: ClArray<'b option>) ->
+
+            let result =
+                clContext.CreateClArray<'b option>(
+                    matrix.RowCount,
+                    deviceAccessMode = DeviceAccessMode.ReadWrite,
+                    hostAccessMode = HostAccessMode.NotAccessible,
+                    allocationMode = AllocationMode.Default
+                )
+
+            runTo queue matrix vector result
+
+            result
