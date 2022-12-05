@@ -4,7 +4,6 @@ open System.IO
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Jobs
 open BenchmarkDotNet.Toolchains.InProcess.Emit
-open BenchmarkDotNet.Toolchains.InProcess.NoEmit
 open GraphBLAS.FSharp
 open GraphBLAS.FSharp.Backend
 open GraphBLAS.FSharp.IO
@@ -15,6 +14,7 @@ open Microsoft.FSharp.Control
 open Backend.Common.StandardOperations
 open Backend.Algorithms.BFS
 open Microsoft.FSharp.Core
+open GraphBLAS.FSharp.Backend.ArraysExtensions
 
 type BFSConfig() =
     inherit ManualConfig()
@@ -62,7 +62,7 @@ type BFSBenchmarks<'elem when 'elem : struct>(
     let mutable matrix = Unchecked.defaultof<Backend.CSRMatrix<'elem>>
     let mutable matrixHost = Unchecked.defaultof<_>
 
-    member val ResultLevels = Unchecked.defaultof<ClVector<'elem>> with get,set
+    member val ResultLevels = Unchecked.defaultof<ClArray<'elem option>> with get,set
 
     [<ParamsSource("AvaliableContexts")>]
     member val OclContextInfo = Unchecked.defaultof<Utils.BenchmarkContext * int> with get, set
