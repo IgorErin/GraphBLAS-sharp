@@ -3,6 +3,8 @@ namespace GraphBLAS.FSharp.Benchmarks
 open System.IO
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Jobs
+open BenchmarkDotNet.Reports
+open BenchmarkDotNet.Running
 open BenchmarkDotNet.Toolchains.InProcess.Emit
 open GraphBLAS.FSharp
 open GraphBLAS.FSharp.Backend
@@ -15,6 +17,49 @@ open Backend.Common.StandardOperations
 open Backend.Algorithms.BFS
 open Microsoft.FSharp.Core
 open GraphBLAS.FSharp.Backend.ArraysExtensions
+
+type BFSTEPSColumn() =
+    interface IColumn with
+        member this.AlwaysShow: bool = true
+        member this.Category: ColumnCategory = ColumnCategory.Statistics
+        member this.ColumnName: string = "TEPS"
+
+        member this.GetValue(summary: Summary, benchmarkCase: BenchmarkCase) : string =
+            let inputMatrixReader =
+                benchmarkCase.Parameters.["InputMatrixReader"] :?> MtxReader
+
+            let matrixShape = inputMatrixReader.ReadMatrixShape()
+
+            let (nrows, ncols) =
+                matrixShape.RowCount, matrixShape.ColumnCount
+
+            let (vertices, edges) =
+                match inputMatrixReader.Format with
+                | Coordinate ->
+                    if nrows = ncols then
+                        (nrows, matrixShape.Nnz)
+                    else
+                        (ncols, nrows)
+                | _ -> failwith "Unsupported"
+
+            if isNull summary.[benchmarkCase].ResultStatistics then
+                "NA"
+            else
+                let meanTime =
+                    summary.[benchmarkCase].ResultStatistics.Mean
+
+                sprintf "%f" <| float edges / (meanTime * 1e-6)
+
+        member this.GetValue(summary: Summary, benchmarkCase: BenchmarkCase, style: SummaryStyle) : string =
+            (this :> IColumn).GetValue(summary, benchmarkCase)
+
+        member this.Id: string = "TEPSColumn"
+        member this.IsAvailable(summary: Summary) : bool = true
+        member this.IsDefault(summary: Summary, benchmarkCase: BenchmarkCase) : bool = false
+        member this.IsNumeric: bool = true
+        member this.Legend: string = "Traversed edges per second"
+        member this.PriorityInCategory: int = 0
+        member this.UnitType: UnitType = UnitType.Dimensionless
 
 type BFSConfig() =
     inherit ManualConfig()
@@ -31,10 +76,11 @@ type BFSConfig() =
                     | Array -> 0
             )
             :> IColumn,
+            BFSTEPSColumn() :> IColumn,
+
             StatisticColumn.Min,
             StatisticColumn.Max
         )
-        //TODO()
         |> ignore
 
         base.AddJob(
