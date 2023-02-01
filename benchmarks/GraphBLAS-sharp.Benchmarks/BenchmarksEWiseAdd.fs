@@ -14,6 +14,7 @@ open GraphBLAS.FSharp.Backend.Matrix.CSR
 open GraphBLAS.FSharp.Objects.Matrix
 open GraphBLAS.FSharp.Benchmarks.MatrixExtensions
 open GraphBLAS.FSharp.Backend.Objects.ClContext
+open GraphBLAS.FSharp.Objects.MatrixExtensions
 
 type Config() =
     inherit ManualConfig()
@@ -68,7 +69,7 @@ type EWiseAddBenchmarks<'matrixT, 'elem when 'matrixT :> IDeviceMemObject and 'e
     [<ParamsSource("InputMatricesProvider")>]
     member val InputMatrixReader = Unchecked.defaultof<MtxReader*MtxReader> with get, set
 
-    member this.OclContext:ClContext = (fst this.OclContextInfo).ClContext
+    member this.OclContext: ClContext = (fst this.OclContextInfo).ClContext
     member this.WorkGroupSize = snd this.OclContextInfo
 
     member this.Processor =
@@ -100,7 +101,7 @@ type EWiseAddBenchmarks<'matrixT, 'elem when 'matrixT :> IDeviceMemObject and 'e
             x
         | Some x -> x
 
-    member this.ReadMatrix (reader:MtxReader) =
+    member this.ReadMatrix (reader: MtxReader) =
         let converter =
             match reader.Field with
             | Pattern -> converterBool
@@ -119,10 +120,8 @@ type EWiseAddBenchmarks<'matrixT, 'elem when 'matrixT :> IDeviceMemObject and 'e
         (this.ResultMatrix :> IDeviceMemObject).Dispose this.Processor
 
     member this.ReadMatrices() =
-        let leftMatrixReader = fst this.InputMatrixReader
-        let rightMatrixReader = snd this.InputMatrixReader
-        firstMatrixHost <- this.ReadMatrix leftMatrixReader
-        secondMatrixHost <- this.ReadMatrix rightMatrixReader
+        firstMatrixHost <- this.ReadMatrix <| fst this.InputMatrixReader
+        secondMatrixHost <- this.ReadMatrix <| snd this.InputMatrixReader
 
     member this.LoadMatricesToGPU () =
         firstMatrix <- buildMatrix this.OclContext firstMatrixHost
@@ -196,7 +195,7 @@ type EWiseAddBenchmarksWithDataTransfer<'matrixT, 'elem when 'matrixT :> IDevice
         this.LoadMatricesToGPU()
         this.EWiseAddition()
         this.Processor.PostAndReply Msg.MsgNotifyMe
-        let res = resultToHost this.ResultMatrix this.Processor
+        resultToHost this.ResultMatrix this.Processor |> ignore
         this.Processor.PostAndReply Msg.MsgNotifyMe
 
 module M =
@@ -228,7 +227,6 @@ type EWiseAddBenchmarks4Float32COOWithoutDataTransfer() =
         (fun context wgSize -> COOMatrix.elementwise context ArithmeticOperations.float32Sum wgSize HostInterop),
         float32,
         (fun _ -> Utils.nextSingle (System.Random())),
-        Matrix.ToBackendCOO
         )
 
     static member InputMatricesProvider =

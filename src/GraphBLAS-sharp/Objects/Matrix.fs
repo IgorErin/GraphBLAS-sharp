@@ -5,46 +5,6 @@ open GraphBLAS.FSharp.Backend.Objects
 open GraphBLAS.FSharp.Backend.Objects.ClMatrix
 
 module Matrix =
-    type COO<'a when 'a: struct> =
-        { RowCount: int
-          ColumnCount: int
-          Rows: int []
-          Columns: int []
-          Values: 'a [] }
-
-        override this.ToString() =
-            [ sprintf "COO Matrix     %ix%i \n" this.RowCount this.ColumnCount
-              sprintf "RowIndices:    %A \n" this.Rows
-              sprintf "ColumnIndices: %A \n" this.Columns
-              sprintf "Values:        %A \n" this.Values ]
-            |> String.concat ""
-
-        static member FromTuples(rowCount: int, columnCount: int, rows: int [], columns: int [], values: 'a []) =
-            { RowCount = rowCount
-              ColumnCount = columnCount
-              Rows = rows
-              Columns = columns
-              Values = values }
-
-        static member FromArray2D(array: 'a [,], isZero: 'a -> bool) =
-            let rows, cols, vals =
-                array
-                |> Seq.cast<'a>
-                |> Seq.mapi (fun idx v -> (idx / Array2D.length2 array, idx % Array2D.length2 array, v))
-                |> Seq.filter (fun (_, _, v) -> not <| isZero v)
-                |> Array.ofSeq
-                |> Array.unzip3
-
-            COO.FromTuples(Array2D.length1 array, Array2D.length2 array, rows, cols, vals)
-
-        member this.ToDevice(context: ClContext) =
-            { Context = context
-              RowCount = this.RowCount
-              ColumnCount = this.ColumnCount
-              Rows = context.CreateClArray this.Rows
-              Columns = context.CreateClArray this.Columns
-              Values = context.CreateClArray this.Values }
-
     type CSR<'a when 'a: struct> =
         { RowCount: int
           ColumnCount: int
@@ -86,6 +46,64 @@ module Matrix =
               RowPointers = context.CreateClArray this.RowPointers
               Columns = context.CreateClArray this.ColumnIndices
               Values = context.CreateClArray this.Values }
+
+    type COO<'a when 'a: struct> =
+        { RowCount: int
+          ColumnCount: int
+          Rows: int []
+          Columns: int []
+          Values: 'a [] }
+
+        override this.ToString() =
+            [ sprintf "COO Matrix     %ix%i \n" this.RowCount this.ColumnCount
+              sprintf "RowIndices:    %A \n" this.Rows
+              sprintf "ColumnIndices: %A \n" this.Columns
+              sprintf "Values:        %A \n" this.Values ]
+            |> String.concat ""
+
+        static member FromTuples(rowCount: int, columnCount: int, rows: int [], columns: int [], values: 'a []) =
+            { RowCount = rowCount
+              ColumnCount = columnCount
+              Rows = rows
+              Columns = columns
+              Values = values }
+
+        static member FromArray2D(array: 'a [,], isZero: 'a -> bool) =
+            let rows, cols, vals =
+                array
+                |> Seq.cast<'a>
+                |> Seq.mapi (fun idx v -> (idx / Array2D.length2 array, idx % Array2D.length2 array, v))
+                |> Seq.filter (fun (_, _, v) -> not <| isZero v)
+                |> Array.ofSeq
+                |> Array.unzip3
+
+            COO.FromTuples(Array2D.length1 array, Array2D.length2 array, rows, cols, vals)
+
+        member this.ToDevice(context: ClContext) =
+            { Context = context
+              RowCount = this.RowCount
+              ColumnCount = this.ColumnCount
+              Rows = context.CreateClArray this.Rows
+              Columns = context.CreateClArray this.Columns
+              Values = context.CreateClArray this.Values }
+
+        member this.ToCSR =
+            let rowIndices2rowPointers (rowIndices: int []) rowCount =
+                let nnzPerRow = Array.zeroCreate rowCount
+                let rowPointers = Array.zeroCreate rowCount
+
+                Array.iter (fun rowIndex -> nnzPerRow.[rowIndex] <- nnzPerRow.[rowIndex] + 1) rowIndices
+
+                for i in 1 .. rowCount - 1 do
+                    rowPointers.[i] <- rowPointers.[i - 1] + nnzPerRow.[i - 1]
+
+                rowPointers
+
+            { CSR.RowCount = this.RowCount
+              CSR.ColumnCount = this.ColumnCount
+              CSR.RowPointers = rowIndices2rowPointers this.Rows this.RowCount
+              CSR.ColumnIndices = this.Columns
+              CSR.Values = this.Values }
 
     type CSC<'a when 'a: struct> =
         { RowCount: int
