@@ -233,7 +233,7 @@ module Operations =
 
         res @>
 
-type MxmFloat32MultiplicationOnly() =
+type Mxm4Float32MultiplicationOnly() =
 
     inherit MxmBenchmarksMultiplicationOnly<float32>(
         (Matrix.mxm Operations.add Operations.mult),
@@ -245,7 +245,7 @@ type MxmFloat32MultiplicationOnly() =
     static member InputMatrixProvider =
         MxmBenchmarks<_>.InputMatrixProviderBuilder "MxmBenchmarks4Float32.txt"
 
-type MxmFloat32WithTransposing() =
+type Mxm4Float32WithTransposing() =
 
     inherit MxmBenchmarksWithTransposing<float32>(
         (Matrix.mxm Operations.add Operations.mult),
@@ -257,7 +257,7 @@ type MxmFloat32WithTransposing() =
     static member InputMatrixProvider =
         MxmBenchmarks<_>.InputMatrixProviderBuilder "MxmBenchmarks4Float32.txt"
 
-type MxmBoolMultiplicationOnly() =
+type Mxm4BoolMultiplicationOnly() =
 
     inherit MxmBenchmarksMultiplicationOnly<bool>(
         (Matrix.mxm Operations.logicalOr Operations.logicalAnd),
@@ -269,7 +269,7 @@ type MxmBoolMultiplicationOnly() =
     static member InputMatrixProvider =
         MxmBenchmarks<_>.InputMatrixProviderBuilder "MxmBenchmarks4Bool.txt"
 
-type MxmBoolWithTransposing() =
+type Mxm4BoolWithTransposing() =
 
     inherit MxmBenchmarksWithTransposing<bool>(
         (Matrix.mxm Operations.logicalOr Operations.logicalAnd),

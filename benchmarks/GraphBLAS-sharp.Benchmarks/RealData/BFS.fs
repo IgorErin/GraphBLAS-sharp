@@ -122,7 +122,7 @@ type BFSBenchmarksWithoutDataTransfer<'elem when 'elem : struct>(
         this.RunBFS()
         this.Processor.PostAndReply(Msg.MsgNotifyMe)
 
-type BFSBenchmarksWithDataTransfer<'elem when 'elem : struct>(
+type BFSBenchmarksWithTransfer<'elem when 'elem : struct>(
     buildFunToBenchmark,
     converter: string -> 'elem,
     boolConverter,
@@ -155,7 +155,7 @@ type BFSBenchmarksWithDataTransfer<'elem when 'elem : struct>(
         this.ResultLevels.ToHost this.Processor |> ignore
         this.Processor.PostAndReply(Msg.MsgNotifyMe)
 
-type BFSBenchmarks4IntWithoutDataTransfer() =
+type BFSBenchmarks4IntWithoutTransfer() =
 
     inherit BFSBenchmarksWithoutDataTransfer<int>(
         (fun context -> singleSource context ArithmeticOperations.intSum ArithmeticOperations.intMul),
@@ -166,9 +166,9 @@ type BFSBenchmarks4IntWithoutDataTransfer() =
     static member InputMatrixProvider =
         BFSBenchmarks<_>.InputMatrixProviderBuilder "BFSBenchmarks.txt"
 
-type BFSBenchmarks4IntWithDataTransfer() =
+type BFSBenchmarks4IntWithTransfer() =
 
-    inherit BFSBenchmarksWithDataTransfer<int>(
+    inherit BFSBenchmarksWithTransfer<int>(
         (fun context -> singleSource context ArithmeticOperations.intSum ArithmeticOperations.intMul),
         int32,
         (fun _ -> 1),

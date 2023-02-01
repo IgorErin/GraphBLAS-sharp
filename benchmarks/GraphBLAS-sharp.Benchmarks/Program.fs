@@ -9,10 +9,10 @@ let main argv =
                              typeof<RealData.Map2Float32CSRWithoutTransfer>
                              typeof<RealData.Map2BoolCOOWithoutTransfer>
                              typeof<RealData.Map2BoolCSRWithoutTransfer>
-                             typeof<RealData.MxmFloat32MultiplicationOnly>
-                             typeof<RealData.MxmFloat32WithTransposing>
-                             typeof<RealData.MxmBoolMultiplicationOnly>
-                             typeof<RealData.MxmBoolWithTransposing> |]
+                             typeof<RealData.Mxm4Float32MultiplicationOnly>
+                             typeof<RealData.Mxm4Float32WithTransposing>
+                             typeof<RealData.Mxm4BoolMultiplicationOnly>
+                             typeof<RealData.Mxm4BoolWithTransposing> |]
 
     benchmarks.Run argv |> ignore
     0

@@ -18,12 +18,13 @@
     <Compile Include="Helpers.fs" />
     <!--Compile Include="BenchmarksBFS.fs" /-->
     <!--Compile Include="BenchmarksTranspose.fs" /-->
-    <Compile Include="RealDataBenchmarks\Mxv.fs" />
-    <Compile Include="RealDataBenchmarks\EWiseAdd.fs" />
-    <Compile Include="RealDataBenchmarks\Mxm.fs" />
-    <Compile Include="RealDataBenchmarks\MathNET.fs" />
-    <Compile Include="RealDataBenchmarks\BFS.fs" />
+    <Compile Include="RealData\Mxv.fs" />
+    <Compile Include="RealData\MatrixMap2.fs" />
+    <Compile Include="RealData\Mxm.fs" />
+    <Compile Include="RealData\MathNET.fs" />
+    <Compile Include="RealData\BFS.fs" />
     <Compile Include="Program.fs" />
+    <Compile Include="Synthetic\MatrixMap2.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

@@ -4,8 +4,6 @@ open System.IO
 open GraphBLAS.FSharp.Backend.Quotes
 open GraphBLAS.FSharp.IO
 open BenchmarkDotNet.Attributes
-open BenchmarkDotNet.Configs
-open BenchmarkDotNet.Columns
 open Brahma.FSharp
 open GraphBLAS.FSharp.Objects
 open GraphBLAS.FSharp.Backend.Objects
@@ -13,35 +11,6 @@ open GraphBLAS.FSharp.Objects.MatrixExtensions
 open GraphBLAS.FSharp.Backend.Objects.ClContext
 open GraphBLAS.FSharp.Backend.Matrix
 open GraphBLAS.FSharp.Benchmarks
-
-type Config() =
-    inherit ManualConfig()
-
-    do
-        base.AddColumn(
-            MatrixPairColumn("RowCount", (fun (matrix,_) -> matrix.ReadMatrixShape().RowCount)) :> IColumn,
-            MatrixPairColumn("ColumnCount", (fun (matrix,_) -> matrix.ReadMatrixShape().ColumnCount)) :> IColumn,
-            MatrixPairColumn(
-                "NNZ",
-                fun (matrix,_) ->
-                    match matrix.Format with
-                    | Coordinate -> matrix.ReadMatrixShape().Nnz
-                    | Array -> 0
-            )
-            :> IColumn,
-            MatrixPairColumn(
-                "SqrNNZ",
-                fun (_,matrix) ->
-                    match matrix.Format with
-                    | Coordinate -> matrix.ReadMatrixShape().Nnz
-                    | Array -> 0
-            )
-            :> IColumn,
-            TEPSColumn() :> IColumn,
-            StatisticColumn.Min,
-            StatisticColumn.Max
-        )
-        |> ignore
 
 [<AbstractClass>]
 [<IterationCount(100)>]

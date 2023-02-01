@@ -39,6 +39,35 @@ type CommonConfig() =
         )
         |> ignore
 
+type Config() =
+    inherit ManualConfig()
+
+    do
+        base.AddColumn(
+            MatrixPairColumn("RowCount", (fun (matrix,_) -> matrix.ReadMatrixShape().RowCount)) :> IColumn,
+            MatrixPairColumn("ColumnCount", (fun (matrix,_) -> matrix.ReadMatrixShape().ColumnCount)) :> IColumn,
+            MatrixPairColumn(
+                "NNZ",
+                fun (matrix,_) ->
+                    match matrix.Format with
+                    | Coordinate -> matrix.ReadMatrixShape().Nnz
+                    | Array -> 0
+            )
+            :> IColumn,
+            MatrixPairColumn(
+                "SqrNNZ",
+                fun (_,matrix) ->
+                    match matrix.Format with
+                    | Coordinate -> matrix.ReadMatrixShape().Nnz
+                    | Array -> 0
+            )
+            :> IColumn,
+            TEPSColumn() :> IColumn,
+            StatisticColumn.Min,
+            StatisticColumn.Max
+        )
+        |> ignore
+
 type MatrixColumn(columnName: string, getShape: MtxReader -> int) =
     interface IColumn with
         member this.AlwaysShow: bool = true
