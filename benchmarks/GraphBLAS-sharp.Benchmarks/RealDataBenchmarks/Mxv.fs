@@ -1,10 +1,11 @@
-namespace GraphBLAS.FSharp.Benchmarks
+namespace GraphBLAS.FSharp.Benchmarks.RealData
 
 open GraphBLAS.FSharp
 open GraphBLAS.FSharp.Backend
 open BenchmarkDotNet.Attributes
 open GraphBLAS.FSharp.Backend.Objects
 open GraphBLAS.FSharp.Objects
+open GraphBLAS.FSharp.Benchmarks
 
 [<Config(typeof<CommonConfig>)>]
 type MxvBenchmarks() =

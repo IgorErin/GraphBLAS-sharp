@@ -1,4 +1,4 @@
-namespace GraphBLAS.FSharp.Benchmarks
+namespace GraphBLAS.FSharp.Benchmarks.RealData
 
 open System.IO
 open GraphBLAS.FSharp.Backend.Quotes
@@ -12,6 +12,7 @@ open GraphBLAS.FSharp.Backend.Objects
 open GraphBLAS.FSharp.Objects.MatrixExtensions
 open GraphBLAS.FSharp.Backend.Objects.ClContext
 open GraphBLAS.FSharp.Backend.Matrix
+open GraphBLAS.FSharp.Benchmarks
 
 type Config() =
     inherit ManualConfig()
@@ -195,7 +196,7 @@ type EWiseAddBenchmarksWithDataTransfer<'matrixT, 'elem when 'matrixT :> IDevice
         resultToHost this.ResultMatrix this.Processor |> ignore
         this.Processor.PostAndReply Msg.MsgNotifyMe
 
-type EWiseAddBenchmarks4Float32COOWithoutDataTransfer() =
+type Map2Float32COOWithoutTransfer() =
 
     inherit EWiseAddBenchmarksWithoutDataTransfer<ClMatrix.COO<float32>,float32>(
         (fun context wgSize -> Matrix.elementwise context ArithmeticOperations.float32Sum wgSize HostInterop),
@@ -207,7 +208,7 @@ type EWiseAddBenchmarks4Float32COOWithoutDataTransfer() =
     static member InputMatricesProvider =
         EWiseAddBenchmarks<_,_>.InputMatricesProviderBuilder "EWiseAddBenchmarks4Float32COO.txt"
 
-type EWiseAddBenchmarks4Float32COOWithDataTransfer() =
+type Map2Float32COOWithTransfer() =
 
     inherit EWiseAddBenchmarksWithDataTransfer<ClMatrix.COO<float32>,float32>(
         (fun context wgSize -> Matrix.elementwise context ArithmeticOperations.float32Sum wgSize HostInterop),
@@ -221,7 +222,7 @@ type EWiseAddBenchmarks4Float32COOWithDataTransfer() =
         EWiseAddBenchmarks<_,_>.InputMatricesProviderBuilder "EWiseAddBenchmarks4Float32COO.txt"
 
 
-type EWiseAddBenchmarks4BoolCOOWithoutDataTransfer() =
+type Map2BoolCOOWithoutTransfer() =
 
     inherit EWiseAddBenchmarksWithoutDataTransfer<ClMatrix.COO<bool>,bool>(
         (fun context wgSize -> Matrix.elementwise context ArithmeticOperations.boolSum wgSize HostInterop),
@@ -234,7 +235,7 @@ type EWiseAddBenchmarks4BoolCOOWithoutDataTransfer() =
         EWiseAddBenchmarks<_, _>.InputMatricesProviderBuilder "EWiseAddBenchmarks4BoolCOO.txt"
 
 
-type EWiseAddBenchmarks4Float32CSRWithoutDataTransfer() =
+type Map2Float32CSRWithoutTransfer() =
 
     inherit EWiseAddBenchmarksWithoutDataTransfer<ClMatrix.CSR<float32>,float32>(
         (fun context wgSize -> Matrix.elementwise context ArithmeticOperations.float32Sum wgSize HostInterop),
@@ -247,7 +248,7 @@ type EWiseAddBenchmarks4Float32CSRWithoutDataTransfer() =
         EWiseAddBenchmarks<_, _>.InputMatricesProviderBuilder "EWiseAddBenchmarks4Float32CSR.txt"
 
 
-type EWiseAddBenchmarks4BoolCSRWithoutDataTransfer() =
+type Map2BoolCSRWithoutTransfer() =
 
     inherit EWiseAddBenchmarksWithoutDataTransfer<ClMatrix.CSR<bool>,bool>(
         (fun context wgSize -> Matrix.elementwise context ArithmeticOperations.boolSum wgSize HostInterop),

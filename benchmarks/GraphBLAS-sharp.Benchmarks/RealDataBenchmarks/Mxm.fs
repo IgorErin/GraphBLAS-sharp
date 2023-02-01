@@ -1,4 +1,4 @@
-namespace GraphBLAS.FSharp.Benchmarks
+namespace GraphBLAS.FSharp.Benchmarks.RealData
 
 open System.IO
 open GraphBLAS.FSharp.IO
@@ -8,6 +8,7 @@ open GraphBLAS.FSharp.Objects
 open GraphBLAS.FSharp.Backend.Objects
 open GraphBLAS.FSharp.Backend.Matrix
 open GraphBLAS.FSharp.Backend.Objects.ClContext
+open GraphBLAS.FSharp.Benchmarks
 
 [<AbstractClass>]
 [<IterationCount(100)>]
@@ -232,7 +233,7 @@ module Operations =
 
         res @>
 
-type MxmBenchmarks4Float32MultiplicationOnly() =
+type MxmFloat32MultiplicationOnly() =
 
     inherit MxmBenchmarksMultiplicationOnly<float32>(
         (Matrix.mxm Operations.add Operations.mult),
@@ -244,7 +245,7 @@ type MxmBenchmarks4Float32MultiplicationOnly() =
     static member InputMatrixProvider =
         MxmBenchmarks<_>.InputMatrixProviderBuilder "MxmBenchmarks4Float32.txt"
 
-type MxmBenchmarks4Float32WithTransposing() =
+type MxmFloat32WithTransposing() =
 
     inherit MxmBenchmarksWithTransposing<float32>(
         (Matrix.mxm Operations.add Operations.mult),
@@ -256,7 +257,7 @@ type MxmBenchmarks4Float32WithTransposing() =
     static member InputMatrixProvider =
         MxmBenchmarks<_>.InputMatrixProviderBuilder "MxmBenchmarks4Float32.txt"
 
-type MxmBenchmarks4BoolMultiplicationOnly() =
+type MxmBoolMultiplicationOnly() =
 
     inherit MxmBenchmarksMultiplicationOnly<bool>(
         (Matrix.mxm Operations.logicalOr Operations.logicalAnd),
@@ -268,7 +269,7 @@ type MxmBenchmarks4BoolMultiplicationOnly() =
     static member InputMatrixProvider =
         MxmBenchmarks<_>.InputMatrixProviderBuilder "MxmBenchmarks4Bool.txt"
 
-type MxmBenchmarks4BoolWithTransposing() =
+type MxmBoolWithTransposing() =
 
     inherit MxmBenchmarksWithTransposing<bool>(
         (Matrix.mxm Operations.logicalOr Operations.logicalAnd),

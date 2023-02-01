@@ -1,4 +1,4 @@
-﻿namespace GraphBLAS.FSharp.Benchmarks
+﻿namespace GraphBLAS.FSharp.Benchmarks.RealData
 
 open System.IO
 open GraphBLAS.FSharp.Objects
@@ -7,6 +7,7 @@ open BenchmarkDotNet.Attributes
 open MathNet.Numerics.LinearAlgebra
 open MathNet.Numerics
 open Microsoft.FSharp.Core
+open GraphBLAS.FSharp.Benchmarks
 
 [<AbstractClass>]
 [<IterationCount(100)>]
