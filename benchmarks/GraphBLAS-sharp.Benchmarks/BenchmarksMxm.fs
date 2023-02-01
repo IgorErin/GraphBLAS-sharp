@@ -7,7 +7,6 @@ open Brahma.FSharp
 open GraphBLAS.FSharp.Objects
 open GraphBLAS.FSharp.Backend.Objects
 open GraphBLAS.FSharp.Backend.Matrix
-open GraphBLAS.FSharp.Benchmarks.MatrixExtensions
 open GraphBLAS.FSharp.Backend.Objects.ClContext
 
 [<AbstractClass>]
@@ -108,15 +107,14 @@ type MxmBenchmarks<'elem when 'elem : struct>(
         this.ResultMatrix.Dispose this.Processor
 
     member this.ReadMask(maskReader) =
-        match this.ReadMatrix maskReader with
-        | Matrix.COO m ->
-            maskHost <-
-                { IsComplemented = false
-                  RowCount = m.RowCount
-                  ColumnCount = m.ColumnCount
-                  Rows = m.Rows
-                  Columns = m.Columns }
-        | _ -> failwith "Unsupported matrix format"
+        let m = this.ReadMatrix maskReader
+
+        maskHost <-
+            { IsComplemented = false
+              RowCount = m.RowCount
+              ColumnCount = m.ColumnCount
+              Rows = m.Rows
+              Columns = m.Columns }
 
     member this.ReadMatrices() =
         let matrixReader, maskReader = this.InputMatrixReader
@@ -240,7 +238,7 @@ type MxmBenchmarks4Float32MultiplicationOnly() =
         (Matrix.mxm Operations.add Operations.mult),
         float32,
         (fun _ -> Utils.nextSingle (System.Random())),
-        (fun context matrix -> ClMatrix.CSR (Matrix.ToBackendCSR context matrix))
+        (fun context matrix -> ClMatrix.CSR <| matrix.ToCSR.ToDevice context)
         )
 
     static member InputMatrixProvider =
@@ -252,7 +250,7 @@ type MxmBenchmarks4Float32WithTransposing() =
         (Matrix.mxm Operations.add Operations.mult),
         float32,
         (fun _ -> Utils.nextSingle (System.Random())),
-        (fun context matrix -> ClMatrix.CSR (Matrix.ToBackendCSR context matrix))
+        (fun context matrix -> ClMatrix.CSR <| matrix.ToCSR.ToDevice context)
         )
 
     static member InputMatrixProvider =
@@ -264,7 +262,7 @@ type MxmBenchmarks4BoolMultiplicationOnly() =
         (Matrix.mxm Operations.logicalOr Operations.logicalAnd),
         (fun _ -> true),
         (fun _ -> true),
-        (fun context matrix -> ClMatrix.CSR (Matrix.ToBackendCSR context matrix))
+        (fun context matrix -> ClMatrix.CSR <| matrix.ToCSR.ToDevice context)
         )
 
     static member InputMatrixProvider =
@@ -276,7 +274,7 @@ type MxmBenchmarks4BoolWithTransposing() =
         (Matrix.mxm Operations.logicalOr Operations.logicalAnd),
         (fun _ -> true),
         (fun _ -> true),
-        (fun context matrix -> ClMatrix.CSR (Matrix.ToBackendCSR context matrix))
+        (fun context matrix -> ClMatrix.CSR <| matrix.ToCSR.ToDevice context)
         )
 
     static member InputMatrixProvider =
@@ -288,7 +286,7 @@ type MxmBenchmarks4Float32MultiplicationOnlyWithZerosFilter() =
         (Matrix.mxm Operations.addWithFilter Operations.mult),
         float32,
         (fun _ -> Utils.nextSingle (System.Random())),
-        (fun context matrix -> ClMatrix.CSR (Matrix.ToBackendCSR context matrix))
+        (fun context matrix -> ClMatrix.CSR <| matrix.ToCSR.ToDevice context)
         )
 
     static member InputMatrixProvider =
@@ -300,7 +298,7 @@ type MxmBenchmarks4Float32WithTransposingWithZerosFilter() =
         (Matrix.mxm Operations.addWithFilter Operations.mult),
         float32,
         (fun _ -> Utils.nextSingle (System.Random())),
-        (fun context matrix -> ClMatrix.CSR (Matrix.ToBackendCSR context matrix))
+        (fun context matrix -> ClMatrix.CSR <| matrix.ToCSR.ToDevice context)
         )
 
     static member InputMatrixProvider =

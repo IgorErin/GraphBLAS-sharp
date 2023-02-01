@@ -35,8 +35,8 @@ type MathNETBenchmark<'elem when 'elem: struct and 'elem :> System.IEquatable<'e
             | Pattern -> converterBool
             | _ -> converter
 
-        let gbMatrix = reader.ReadMatrix converter
-        MathNETBenchmark<_>.COOMatrixToMathNETSparse gbMatrix
+        Matrix.COO (reader.ReadMatrix converter)
+        |> MathNETBenchmark<_>.COOMatrixToMathNETSparse
 
     abstract member GlobalSetup : unit -> unit
 
