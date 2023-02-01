@@ -9,12 +9,9 @@ open BenchmarkDotNet.Columns
 open Brahma.FSharp
 open GraphBLAS.FSharp.Objects
 open GraphBLAS.FSharp.Backend.Objects
-open GraphBLAS.FSharp.Backend.Matrix.COO
-open GraphBLAS.FSharp.Backend.Matrix.CSR
-open GraphBLAS.FSharp.Objects.Matrix
-open GraphBLAS.FSharp.Benchmarks.MatrixExtensions
-open GraphBLAS.FSharp.Backend.Objects.ClContext
 open GraphBLAS.FSharp.Objects.MatrixExtensions
+open GraphBLAS.FSharp.Backend.Objects.ClContext
+open GraphBLAS.FSharp.Backend.Matrix
 
 type Config() =
     inherit ManualConfig()
@@ -53,15 +50,15 @@ type EWiseAddBenchmarks<'matrixT, 'elem when 'matrixT :> IDeviceMemObject and 'e
         buildFunToBenchmark,
         converter: string -> 'elem,
         converterBool,
-        buildMatrix) =
+        buildMatrix: Matrix.COO<_> -> Matrix<_>) =
 
     let mutable funToBenchmark = None
-    let mutable firstMatrix = Unchecked.defaultof<'matrixT>
-    let mutable secondMatrix = Unchecked.defaultof<'matrixT>
+    let mutable firstMatrix = Unchecked.defaultof<ClMatrix<'elem>>
+    let mutable secondMatrix = Unchecked.defaultof<ClMatrix<'elem>>
     let mutable firstMatrixHost = Unchecked.defaultof<_>
     let mutable secondMatrixHost = Unchecked.defaultof<_>
 
-    member val ResultMatrix = Unchecked.defaultof<'matrixT> with get,set
+    member val ResultMatrix = Unchecked.defaultof<ClMatrix<'elem>> with get,set
 
     [<ParamsSource("AvaliableContexts")>]
     member val OclContextInfo = Unchecked.defaultof<Utils.BenchmarkContext * int> with get, set
@@ -113,19 +110,19 @@ type EWiseAddBenchmarks<'matrixT, 'elem when 'matrixT :> IDeviceMemObject and 'e
         this.ResultMatrix <- this.FunToBenchmark this.Processor firstMatrix secondMatrix
 
     member this.ClearInputMatrices() =
-        (firstMatrix :> IDeviceMemObject).Dispose this.Processor
-        (secondMatrix :> IDeviceMemObject).Dispose this.Processor
+        firstMatrix.Dispose this.Processor
+        secondMatrix.Dispose this.Processor
 
     member this.ClearResult() =
-        (this.ResultMatrix :> IDeviceMemObject).Dispose this.Processor
+        this.ResultMatrix.Dispose this.Processor
 
     member this.ReadMatrices() =
         firstMatrixHost <- this.ReadMatrix <| fst this.InputMatrixReader
         secondMatrixHost <- this.ReadMatrix <| snd this.InputMatrixReader
 
     member this.LoadMatricesToGPU () =
-        firstMatrix <- buildMatrix this.OclContext firstMatrixHost
-        secondMatrix <- buildMatrix this.OclContext secondMatrixHost
+        firstMatrix <- (buildMatrix firstMatrixHost).ToDevice this.OclContext
+        secondMatrix <- (buildMatrix secondMatrixHost).ToDevice this.OclContext
 
     abstract member GlobalSetup : unit -> unit
 
@@ -198,35 +195,13 @@ type EWiseAddBenchmarksWithDataTransfer<'matrixT, 'elem when 'matrixT :> IDevice
         resultToHost this.ResultMatrix this.Processor |> ignore
         this.Processor.PostAndReply Msg.MsgNotifyMe
 
-module M =
-    let resultToHostCOO (resultMatrix: ClMatrix.COO<'a>) (processor :MailboxProcessor<_>) =
-        let cols =
-            let a = Array.zeroCreate resultMatrix.ColumnCount
-            processor.Post(Msg.CreateToHostMsg<_>(resultMatrix.Columns,a))
-            a
-        let rows =
-            let a = Array.zeroCreate resultMatrix.RowCount
-            processor.Post(Msg.CreateToHostMsg(resultMatrix.Rows,a))
-            a
-        let vals =
-            let a = Array.zeroCreate resultMatrix.Values.Length
-            processor.Post(Msg.CreateToHostMsg(resultMatrix.Values,a))
-            a
-        {
-            RowCount = resultMatrix.RowCount
-            ColumnCount = resultMatrix.ColumnCount
-            Rows = rows
-            Columns = cols
-            Values = vals
-        }
-
-
 type EWiseAddBenchmarks4Float32COOWithoutDataTransfer() =
 
     inherit EWiseAddBenchmarksWithoutDataTransfer<ClMatrix.COO<float32>,float32>(
-        (fun context wgSize -> COOMatrix.elementwise context ArithmeticOperations.float32Sum wgSize HostInterop),
+        (fun context wgSize -> Matrix.elementwise context ArithmeticOperations.float32Sum wgSize HostInterop),
         float32,
         (fun _ -> Utils.nextSingle (System.Random())),
+        Matrix.COO
         )
 
     static member InputMatricesProvider =
@@ -235,11 +210,11 @@ type EWiseAddBenchmarks4Float32COOWithoutDataTransfer() =
 type EWiseAddBenchmarks4Float32COOWithDataTransfer() =
 
     inherit EWiseAddBenchmarksWithDataTransfer<ClMatrix.COO<float32>,float32>(
-        (fun context wgSize -> COOMatrix.elementwise context ArithmeticOperations.float32Sum wgSize HostInterop),
+        (fun context wgSize -> Matrix.elementwise context ArithmeticOperations.float32Sum wgSize HostInterop),
         float32,
         (fun _ -> Utils.nextSingle (System.Random())),
-        Matrix.ToBackendCOO<float32>,
-        M.resultToHostCOO
+        Matrix.COO,
+        (fun matrix -> matrix.ToHost)
         )
 
     static member InputMatricesProvider =
@@ -249,10 +224,10 @@ type EWiseAddBenchmarks4Float32COOWithDataTransfer() =
 type EWiseAddBenchmarks4BoolCOOWithoutDataTransfer() =
 
     inherit EWiseAddBenchmarksWithoutDataTransfer<ClMatrix.COO<bool>,bool>(
-        (fun context wgSize -> COOMatrix.elementwise context ArithmeticOperations.boolSum wgSize HostInterop),
+        (fun context wgSize -> Matrix.elementwise context ArithmeticOperations.boolSum wgSize HostInterop),
         (fun _ -> true),
         (fun _ -> true),
-        Matrix.ToBackendCOO<bool>
+        Matrix.COO
         )
 
     static member InputMatricesProvider =
@@ -262,10 +237,10 @@ type EWiseAddBenchmarks4BoolCOOWithoutDataTransfer() =
 type EWiseAddBenchmarks4Float32CSRWithoutDataTransfer() =
 
     inherit EWiseAddBenchmarksWithoutDataTransfer<ClMatrix.CSR<float32>,float32>(
-        (fun context wgSize -> CSRMatrix.elementwise context ArithmeticOperations.float32Sum wgSize HostInterop),
+        (fun context wgSize -> Matrix.elementwise context ArithmeticOperations.float32Sum wgSize HostInterop),
         float32,
         (fun _ -> Utils.nextSingle (System.Random())),
-        Matrix.ToBackendCSR
+        (fun matrix -> Matrix.CSR matrix.ToCSR)
         )
 
     static member InputMatricesProvider =
@@ -275,10 +250,10 @@ type EWiseAddBenchmarks4Float32CSRWithoutDataTransfer() =
 type EWiseAddBenchmarks4BoolCSRWithoutDataTransfer() =
 
     inherit EWiseAddBenchmarksWithoutDataTransfer<ClMatrix.CSR<bool>,bool>(
-        (fun context wgSize -> CSRMatrix.elementwise context ArithmeticOperations.boolSum wgSize HostInterop),
+        (fun context wgSize -> Matrix.elementwise context ArithmeticOperations.boolSum wgSize HostInterop),
         (fun _ -> true),
         (fun _ -> true),
-        Matrix.ToBackendCSR
+        (fun matrix -> Matrix.CSR matrix.ToCSR)
         )
 
     static member InputMatricesProvider =
@@ -289,10 +264,10 @@ type EWiseAddBenchmarks4BoolCSRWithoutDataTransfer() =
 type EWiseAddAtLeastOneBenchmarks4BoolCOOWithoutDataTransfer() =
 
     inherit EWiseAddBenchmarksWithoutDataTransfer<ClMatrix.COO<bool>,bool>(
-        (fun context wgSize -> COOMatrix.elementwiseAtLeastOne context ArithmeticOperations.boolSumAtLeastOne wgSize HostInterop),
+        (fun context wgSize -> Matrix.elementwiseAtLeastOne context ArithmeticOperations.boolSumAtLeastOne wgSize HostInterop),
         (fun _ -> true),
         (fun _ -> true),
-        Matrix.ToBackendCOO<bool>
+        Matrix.COO
         )
 
     static member InputMatricesProvider =
@@ -301,10 +276,10 @@ type EWiseAddAtLeastOneBenchmarks4BoolCOOWithoutDataTransfer() =
 type EWiseAddAtLeastOneBenchmarks4BoolCSRWithoutDataTransfer() =
 
     inherit EWiseAddBenchmarksWithoutDataTransfer<ClMatrix.CSR<bool>,bool>(
-        (fun context wgSize -> CSRMatrix.elementwiseAtLeastOne context ArithmeticOperations.boolSumAtLeastOne wgSize HostInterop),
+        (fun context wgSize -> Matrix.elementwiseAtLeastOne context ArithmeticOperations.boolSumAtLeastOne wgSize HostInterop),
         (fun _ -> true),
         (fun _ -> true),
-        Matrix.ToBackendCSR
+        (fun matrix -> Matrix.CSR matrix.ToCSR)
         )
 
     static member InputMatricesProvider =
@@ -313,10 +288,10 @@ type EWiseAddAtLeastOneBenchmarks4BoolCSRWithoutDataTransfer() =
 type EWiseAddAtLeastOneBenchmarks4Float32COOWithoutDataTransfer() =
 
     inherit EWiseAddBenchmarksWithoutDataTransfer<ClMatrix.COO<float32>,float32>(
-        (fun context wgSize -> COOMatrix.elementwiseAtLeastOne context ArithmeticOperations.float32SumAtLeastOne wgSize HostInterop),
+        (fun context wgSize -> Matrix.elementwiseAtLeastOne context ArithmeticOperations.float32SumAtLeastOne wgSize HostInterop),
         float32,
         (fun _ -> Utils.nextSingle (System.Random())),
-        Matrix.ToBackendCOO<float32>
+        Matrix.COO
         )
 
     static member InputMatricesProvider =
@@ -325,10 +300,10 @@ type EWiseAddAtLeastOneBenchmarks4Float32COOWithoutDataTransfer() =
 type EWiseAddAtLeastOneBenchmarks4Float32CSRWithoutDataTransfer() =
 
     inherit EWiseAddBenchmarksWithoutDataTransfer<ClMatrix.CSR<float32>,float32>(
-        (fun context wgSize -> CSRMatrix.elementwiseAtLeastOne context ArithmeticOperations.float32SumAtLeastOne wgSize HostInterop),
+        (fun context wgSize -> Matrix.elementwiseAtLeastOne context ArithmeticOperations.float32SumAtLeastOne wgSize HostInterop),
         float32,
         (fun _ -> Utils.nextSingle (System.Random())),
-        Matrix.ToBackendCSR<float32>
+        (fun matrix -> Matrix.CSR matrix.ToCSR)
         )
 
     static member InputMatricesProvider =
