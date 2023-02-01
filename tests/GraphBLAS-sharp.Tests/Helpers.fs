@@ -26,10 +26,10 @@ module CustomDatatypes =
     [<Struct>]
     type WrappedInt =
         { InnerValue: int }
-        static member (+)(x: WrappedInt, y: WrappedInt) =
+        static member (+) (x: WrappedInt, y: WrappedInt) =
             { InnerValue = x.InnerValue + y.InnerValue }
 
-        static member (*)(x: WrappedInt, y: WrappedInt) =
+        static member (*) (x: WrappedInt, y: WrappedInt) =
             { InnerValue = x.InnerValue * y.InnerValue }
 
     let addMultSemiringOnWrappedInt: Semiring<WrappedInt> =

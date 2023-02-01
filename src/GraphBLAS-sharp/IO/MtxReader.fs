@@ -42,7 +42,7 @@ type MtxReader(pathToFile: string) =
            ColumnCount = ncols
            Nnz = nnz |}
 
-    member this.ReadMatrix(converter: string -> 'a) : Matrix<'a> =
+    member this.ReadMatrix(converter: string -> 'a) =
         if object <> MtxMatrix then
             failwith "Object is not matrix"
 
@@ -51,7 +51,7 @@ type MtxReader(pathToFile: string) =
         while streamReader.Peek() = int '%' do
             streamReader.ReadLine() |> ignore
 
-        let matrixFromCoordinateFormat () =
+        let matrixFromCoordinateFormat() : Matrix.COO<_> =
             let size =
                 streamReader.ReadLine().Split(' ')
                 |> Array.map int
@@ -119,12 +119,12 @@ type MtxReader(pathToFile: string) =
                     values.[i] <- value)
                 sortedData
 
-            Matrix.COO
-                { Rows = rows
-                  Columns = cols
-                  Values = values
-                  RowCount = n
-                  ColumnCount = m }
+
+            { Rows = rows
+              Columns = cols
+              Values = values
+              RowCount = n
+              ColumnCount = m }
 
         match format with
         | Coordinate -> matrixFromCoordinateFormat ()
