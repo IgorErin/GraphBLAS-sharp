@@ -19,9 +19,9 @@ type Config() =
 
     do
         base.AddColumn(
-            MatrixShapeColumn("RowCount", (fun (matrix,_) -> matrix.ReadMatrixShape().RowCount)) :> IColumn,
-            MatrixShapeColumn("ColumnCount", (fun (matrix,_) -> matrix.ReadMatrixShape().ColumnCount)) :> IColumn,
-            MatrixShapeColumn(
+            MatrixPairColumn("RowCount", (fun (matrix,_) -> matrix.ReadMatrixShape().RowCount)) :> IColumn,
+            MatrixPairColumn("ColumnCount", (fun (matrix,_) -> matrix.ReadMatrixShape().ColumnCount)) :> IColumn,
+            MatrixPairColumn(
                 "NNZ",
                 fun (matrix,_) ->
                     match matrix.Format with
@@ -29,7 +29,7 @@ type Config() =
                     | Array -> 0
             )
             :> IColumn,
-            MatrixShapeColumn(
+            MatrixPairColumn(
                 "SqrNNZ",
                 fun (_,matrix) ->
                     match matrix.Format with
@@ -47,7 +47,7 @@ type Config() =
 [<IterationCount(100)>]
 [<WarmupCount(10)>]
 [<Config(typeof<Config>)>]
-type EWiseAddBenchmarks<'matrixT, 'elem when 'matrixT :> IDeviceMemObject and 'elem : struct>(
+type Map2Benchmarks<'matrixT, 'elem when 'matrixT :> IDeviceMemObject and 'elem : struct>(
         buildFunToBenchmark,
         converter: string -> 'elem,
         converterBool,
@@ -133,13 +133,13 @@ type EWiseAddBenchmarks<'matrixT, 'elem when 'matrixT :> IDeviceMemObject and 'e
 
     abstract member Benchmark : unit -> unit
 
-type EWiseAddBenchmarksWithoutDataTransfer<'matrixT, 'elem when 'matrixT :> IDeviceMemObject and 'elem : struct>(
+type Map2BenchmarksWithoutDataTransfer<'matrixT, 'elem when 'matrixT :> IDeviceMemObject and 'elem : struct>(
         buildFunToBenchmark,
         converter: string -> 'elem,
         converterBool,
         buildMatrix) =
 
-    inherit EWiseAddBenchmarks<'matrixT, 'elem>(
+    inherit Map2Benchmarks<'matrixT, 'elem>(
         buildFunToBenchmark,
         converter,
         converterBool,
@@ -163,14 +163,14 @@ type EWiseAddBenchmarksWithoutDataTransfer<'matrixT, 'elem when 'matrixT :> IDev
         this.EWiseAddition()
         this.Processor.PostAndReply(Msg.MsgNotifyMe)
 
-type EWiseAddBenchmarksWithDataTransfer<'matrixT, 'elem when 'matrixT :> IDeviceMemObject and 'elem : struct>(
+type Map2BenchmarksWithDataTransfer<'matrixT, 'elem when 'matrixT :> IDeviceMemObject and 'elem : struct>(
         buildFunToBenchmark,
         converter: string -> 'elem,
         converterBool,
         buildMatrix,
         resultToHost) =
 
-    inherit EWiseAddBenchmarks<'matrixT, 'elem>(
+    inherit Map2Benchmarks<'matrixT, 'elem>(
         buildFunToBenchmark,
         converter,
         converterBool,
@@ -198,7 +198,7 @@ type EWiseAddBenchmarksWithDataTransfer<'matrixT, 'elem when 'matrixT :> IDevice
 
 type Map2Float32COOWithoutTransfer() =
 
-    inherit EWiseAddBenchmarksWithoutDataTransfer<ClMatrix.COO<float32>,float32>(
+    inherit Map2BenchmarksWithoutDataTransfer<ClMatrix.COO<float32>,float32>(
         (fun context wgSize -> Matrix.elementwise context ArithmeticOperations.float32Sum wgSize HostInterop),
         float32,
         (fun _ -> Utils.nextSingle (System.Random())),
@@ -206,11 +206,11 @@ type Map2Float32COOWithoutTransfer() =
         )
 
     static member InputMatricesProvider =
-        EWiseAddBenchmarks<_,_>.InputMatricesProviderBuilder "EWiseAddBenchmarks4Float32COO.txt"
+        Map2Benchmarks<_,_>.InputMatricesProviderBuilder "EWiseAddBenchmarks4Float32COO.txt"
 
 type Map2Float32COOWithTransfer() =
 
-    inherit EWiseAddBenchmarksWithDataTransfer<ClMatrix.COO<float32>,float32>(
+    inherit Map2BenchmarksWithDataTransfer<ClMatrix.COO<float32>,float32>(
         (fun context wgSize -> Matrix.elementwise context ArithmeticOperations.float32Sum wgSize HostInterop),
         float32,
         (fun _ -> Utils.nextSingle (System.Random())),
@@ -219,12 +219,12 @@ type Map2Float32COOWithTransfer() =
         )
 
     static member InputMatricesProvider =
-        EWiseAddBenchmarks<_,_>.InputMatricesProviderBuilder "EWiseAddBenchmarks4Float32COO.txt"
+        Map2Benchmarks<_,_>.InputMatricesProviderBuilder "EWiseAddBenchmarks4Float32COO.txt"
 
 
 type Map2BoolCOOWithoutTransfer() =
 
-    inherit EWiseAddBenchmarksWithoutDataTransfer<ClMatrix.COO<bool>,bool>(
+    inherit Map2BenchmarksWithoutDataTransfer<ClMatrix.COO<bool>,bool>(
         (fun context wgSize -> Matrix.elementwise context ArithmeticOperations.boolSum wgSize HostInterop),
         (fun _ -> true),
         (fun _ -> true),
@@ -232,12 +232,12 @@ type Map2BoolCOOWithoutTransfer() =
         )
 
     static member InputMatricesProvider =
-        EWiseAddBenchmarks<_, _>.InputMatricesProviderBuilder "EWiseAddBenchmarks4BoolCOO.txt"
+        Map2Benchmarks<_, _>.InputMatricesProviderBuilder "EWiseAddBenchmarks4BoolCOO.txt"
 
 
 type Map2Float32CSRWithoutTransfer() =
 
-    inherit EWiseAddBenchmarksWithoutDataTransfer<ClMatrix.CSR<float32>,float32>(
+    inherit Map2BenchmarksWithoutDataTransfer<ClMatrix.CSR<float32>,float32>(
         (fun context wgSize -> Matrix.elementwise context ArithmeticOperations.float32Sum wgSize HostInterop),
         float32,
         (fun _ -> Utils.nextSingle (System.Random())),
@@ -245,12 +245,12 @@ type Map2Float32CSRWithoutTransfer() =
         )
 
     static member InputMatricesProvider =
-        EWiseAddBenchmarks<_, _>.InputMatricesProviderBuilder "EWiseAddBenchmarks4Float32CSR.txt"
+        Map2Benchmarks<_, _>.InputMatricesProviderBuilder "EWiseAddBenchmarks4Float32CSR.txt"
 
 
 type Map2BoolCSRWithoutTransfer() =
 
-    inherit EWiseAddBenchmarksWithoutDataTransfer<ClMatrix.CSR<bool>,bool>(
+    inherit Map2BenchmarksWithoutDataTransfer<ClMatrix.CSR<bool>,bool>(
         (fun context wgSize -> Matrix.elementwise context ArithmeticOperations.boolSum wgSize HostInterop),
         (fun _ -> true),
         (fun _ -> true),
@@ -258,13 +258,13 @@ type Map2BoolCSRWithoutTransfer() =
         )
 
     static member InputMatricesProvider =
-        EWiseAddBenchmarks<_, _>.InputMatricesProviderBuilder "EWiseAddBenchmarks4BoolCSR.txt"
+        Map2Benchmarks<_, _>.InputMatricesProviderBuilder "EWiseAddBenchmarks4BoolCSR.txt"
 
 // With AtLeastOne
 
 type EWiseAddAtLeastOneBenchmarks4BoolCOOWithoutDataTransfer() =
 
-    inherit EWiseAddBenchmarksWithoutDataTransfer<ClMatrix.COO<bool>,bool>(
+    inherit Map2BenchmarksWithoutDataTransfer<ClMatrix.COO<bool>,bool>(
         (fun context wgSize -> Matrix.elementwiseAtLeastOne context ArithmeticOperations.boolSumAtLeastOne wgSize HostInterop),
         (fun _ -> true),
         (fun _ -> true),
@@ -272,11 +272,11 @@ type EWiseAddAtLeastOneBenchmarks4BoolCOOWithoutDataTransfer() =
         )
 
     static member InputMatricesProvider =
-        EWiseAddBenchmarks<_, _>.InputMatricesProviderBuilder "EWiseAddBenchmarks4BoolCSR.txt"
+        Map2Benchmarks<_, _>.InputMatricesProviderBuilder "EWiseAddBenchmarks4BoolCSR.txt"
 
 type EWiseAddAtLeastOneBenchmarks4BoolCSRWithoutDataTransfer() =
 
-    inherit EWiseAddBenchmarksWithoutDataTransfer<ClMatrix.CSR<bool>,bool>(
+    inherit Map2BenchmarksWithoutDataTransfer<ClMatrix.CSR<bool>,bool>(
         (fun context wgSize -> Matrix.elementwiseAtLeastOne context ArithmeticOperations.boolSumAtLeastOne wgSize HostInterop),
         (fun _ -> true),
         (fun _ -> true),
@@ -284,11 +284,11 @@ type EWiseAddAtLeastOneBenchmarks4BoolCSRWithoutDataTransfer() =
         )
 
     static member InputMatricesProvider =
-        EWiseAddBenchmarks<_, _>.InputMatricesProviderBuilder "EWiseAddBenchmarks4BoolCSR.txt"
+        Map2Benchmarks<_, _>.InputMatricesProviderBuilder "EWiseAddBenchmarks4BoolCSR.txt"
 
 type EWiseAddAtLeastOneBenchmarks4Float32COOWithoutDataTransfer() =
 
-    inherit EWiseAddBenchmarksWithoutDataTransfer<ClMatrix.COO<float32>,float32>(
+    inherit Map2BenchmarksWithoutDataTransfer<ClMatrix.COO<float32>,float32>(
         (fun context wgSize -> Matrix.elementwiseAtLeastOne context ArithmeticOperations.float32SumAtLeastOne wgSize HostInterop),
         float32,
         (fun _ -> Utils.nextSingle (System.Random())),
@@ -296,11 +296,11 @@ type EWiseAddAtLeastOneBenchmarks4Float32COOWithoutDataTransfer() =
         )
 
     static member InputMatricesProvider =
-        EWiseAddBenchmarks<_,_>.InputMatricesProviderBuilder "EWiseAddBenchmarks4Float32COO.txt"
+        Map2Benchmarks<_,_>.InputMatricesProviderBuilder "EWiseAddBenchmarks4Float32COO.txt"
 
 type EWiseAddAtLeastOneBenchmarks4Float32CSRWithoutDataTransfer() =
 
-    inherit EWiseAddBenchmarksWithoutDataTransfer<ClMatrix.CSR<float32>,float32>(
+    inherit Map2BenchmarksWithoutDataTransfer<ClMatrix.CSR<float32>,float32>(
         (fun context wgSize -> Matrix.elementwiseAtLeastOne context ArithmeticOperations.float32SumAtLeastOne wgSize HostInterop),
         float32,
         (fun _ -> Utils.nextSingle (System.Random())),
@@ -308,4 +308,4 @@ type EWiseAddAtLeastOneBenchmarks4Float32CSRWithoutDataTransfer() =
         )
 
     static member InputMatricesProvider =
-        EWiseAddBenchmarks<_,_>.InputMatricesProviderBuilder "EWiseAddBenchmarks4Float32COO.txt"
+        Map2Benchmarks<_,_>.InputMatricesProviderBuilder "EWiseAddBenchmarks4Float32COO.txt"

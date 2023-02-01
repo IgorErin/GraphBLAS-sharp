@@ -22,6 +22,7 @@
     <Compile Include="RealDataBenchmarks\EWiseAdd.fs" />
     <Compile Include="RealDataBenchmarks\Mxm.fs" />
     <Compile Include="RealDataBenchmarks\MathNET.fs" />
+    <Compile Include="RealDataBenchmarks\BFS.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
