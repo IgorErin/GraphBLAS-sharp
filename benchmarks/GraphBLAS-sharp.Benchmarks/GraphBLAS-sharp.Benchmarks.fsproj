@@ -12,6 +12,7 @@
     <ProjectReference Include="..\..\src\GraphBLAS-sharp\GraphBLAS-sharp.fsproj">
       <Name>GraphBLAS-sharp.fsproj</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\tests\GraphBLAS-sharp.Tests\GraphBLAS-sharp.Tests.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
@@ -23,8 +24,8 @@
     <Compile Include="RealData\Mxm.fs" />
     <Compile Include="RealData\MathNET.fs" />
     <Compile Include="RealData\BFS.fs" />
-    <Compile Include="Program.fs" />
     <Compile Include="Synthetic\MatrixMap2.fs" />
+    <Compile Include="Program.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>
