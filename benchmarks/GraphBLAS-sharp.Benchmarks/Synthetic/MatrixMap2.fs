@@ -1,20 +1,23 @@
 namespace GraphBLAS.FSharp.Benchmarks.RealData
 
 open System.IO
+open FsCheck
 open GraphBLAS.FSharp.Backend.Quotes
-open GraphBLAS.FSharp.IO
 open BenchmarkDotNet.Attributes
 open Brahma.FSharp
 open GraphBLAS.FSharp.Objects
 open GraphBLAS.FSharp.Backend.Objects
 open GraphBLAS.FSharp.Backend.Matrix
 open GraphBLAS.FSharp.Benchmarks
+open GraphBLAS.FSharp.Backend.Objects.ClContext
 
 [<AbstractClass>]
 [<IterationCount(100)>]
 [<WarmupCount(10)>]
 [<Config(typeof<Config>)>]
-type Map2Benchmarks<'elem when 'elem : struct>(buildFunToBenchmark, generator) =
+type MatrixMap2Benchmarks<'elem when 'elem : struct>
+    (buildFunToBenchmark,
+    generator: Gen<Matrix<_>*Matrix<_>>) =
 
     let mutable funToBenchmark = None
     let mutable firstMatrix = Unchecked.defaultof<ClMatrix<'elem>>
@@ -28,7 +31,7 @@ type Map2Benchmarks<'elem when 'elem : struct>(buildFunToBenchmark, generator) =
     member val OclContextInfo = Unchecked.defaultof<Utils.BenchmarkContext * int> with get, set
 
     [<Params(100, 1000, 10000)>] // TODO(choose compatible size)
-    member val Size = Unchecked.defaultof<MtxReader*MtxReader> with get, set
+    member val Size = Unchecked.defaultof<int> with get, set
 
     member this.OclContext: ClContext = (fst this.OclContextInfo).ClContext
     member this.WorkGroupSize = snd this.OclContextInfo
@@ -48,25 +51,27 @@ type Map2Benchmarks<'elem when 'elem : struct>(buildFunToBenchmark, generator) =
             x
         | Some x -> x
 
-    member this.GenerateMatrices() = Unchecked.defaultof<Matrix<'elem>*Matrix<'elem>>
+    member this.GenerateMatrices() =
+         List.last (Gen.sample this.Size 1 generator)
+
 
     member this.CreateAndSetMatrices() =
         let matrixPair = this.GenerateMatrices()
 
         // TODO(empty Matrix)
-        if (fst matrixPair).NNZCount > 0
-           && (snd matrixPair).NNZCount > 0 then
+        if (fst matrixPair).NNZ > 0
+           && (snd matrixPair).NNZ > 0 then
             firstMatrixHost <- fst matrixPair
             secondMatrixHost <- snd matrixPair
         else
             this.CreateAndSetMatrices()
 
-    member this.LoadMatricesToGPU () =
+    member this.LoadMatricesToGPU() =
         firstMatrix <- firstMatrixHost.ToDevice this.OclContext
         secondMatrix <- secondMatrixHost.ToDevice this.OclContext
 
     member this.EWiseAddition() =
-        this.ResultMatrix <- this.FunToBenchmark this.Processor firstMatrix secondMatrix
+        this.ResultMatrix <- this.FunToBenchmark this.Processor HostInterop firstMatrix secondMatrix
 
     member this.ClearInputMatrices() =
         firstMatrix.Dispose this.Processor
@@ -75,10 +80,66 @@ type Map2Benchmarks<'elem when 'elem : struct>(buildFunToBenchmark, generator) =
     member this.ClearResult() =
         this.ResultMatrix.Dispose this.Processor
 
-    abstract member GlobalSetup : unit -> unit
+    abstract member GlobalSetup: unit -> unit
 
-    abstract member IterationCleanup : unit -> unit
+    abstract member IterationSetup: unit -> unit
 
-    abstract member GlobalCleanup : unit -> unit
+    abstract member Benchmark: unit -> unit
 
-    abstract member Benchmark : unit -> unit
+    abstract member IterationCleanup: unit -> unit
+
+    abstract member GlobalCleanup: unit -> unit
+
+type MatrixMap2SyntheticWithoutTransfer<'elem when 'elem : struct>(
+        buildFunToBenchmark,
+        generator) =
+
+    inherit MatrixMap2Benchmarks<'elem>(
+        buildFunToBenchmark,
+        generator)
+
+    [<GlobalSetup>]
+    override this.GlobalSetup() = ()
+
+    [<IterationSetup>]
+    override this.IterationSetup() =
+        this.CreateAndSetMatrices()
+        this.LoadMatricesToGPU()
+        this.Processor.PostAndReply(Msg.MsgNotifyMe)
+
+    [<Benchmark>]
+    override this.Benchmark() =
+        this.EWiseAddition()
+        this.Processor.PostAndReply(Msg.MsgNotifyMe)
+
+    [<IterationCleanup>]
+    override this.IterationCleanup() =
+        this.ClearResult()
+        this.ClearInputMatrices()
+
+    [<GlobalCleanup>]
+    override this.GlobalCleanup() = ()
+
+type MatrixCOOIntMap2Synthetic() =
+
+    inherit MatrixMap2SyntheticWithoutTransfer<int>(
+        (fun clContext -> Matrix.map2 clContext ArithmeticOperations.intSum),
+        MatrixGenerator.intPairOfEqualSizes COO)
+
+type MatrixCSRIntMap2Synthetic() =
+
+    inherit MatrixMap2SyntheticWithoutTransfer<int>(
+        (fun clContext -> Matrix.map2 clContext ArithmeticOperations.intSum),
+        MatrixGenerator.intPairOfEqualSizes CSR)
+
+type MatrixCOOFloatMap2Synthetic() =
+
+    inherit MatrixMap2SyntheticWithoutTransfer<float>(
+        (fun clContext -> Matrix.map2 clContext ArithmeticOperations.floatSum),
+        MatrixGenerator.floatPairOfEqualSizes COO)
+
+type MatrixCSRFloatMap2Synthetic() =
+
+    inherit MatrixMap2SyntheticWithoutTransfer<float>(
+        (fun clContext -> Matrix.map2 clContext ArithmeticOperations.floatSum),
+        MatrixGenerator.floatPairOfEqualSizes CSR)

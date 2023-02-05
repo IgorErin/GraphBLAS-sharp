@@ -66,7 +66,7 @@ type VectorEWiseBenchmarks<'elem when 'elem : struct>(
             x
         | Some x -> x
 
-    member this.EWiseAddition() =
+    member this.Map2Evaluation() =
         this.ResultVector <- this.FunToBenchmark this.Processor HostInterop firstVector secondVector
 
     member this.ClearInputVectors()=
@@ -83,15 +83,15 @@ type VectorEWiseBenchmarks<'elem when 'elem : struct>(
         firstVector <- (fst this.HostVectorPair).ToDevice this.OclContext
         secondVector <- (snd this.HostVectorPair).ToDevice this.OclContext
 
-    abstract member GlobalSetup : unit -> unit
+    abstract member GlobalSetup: unit -> unit
 
     abstract member IterationSetup: unit -> unit
 
-    abstract member Benchmark : unit -> unit
+    abstract member Benchmark: unit -> unit
 
-    abstract member IterationCleanup : unit -> unit
+    abstract member IterationCleanup: unit -> unit
 
-    abstract member GlobalCleanup : unit -> unit
+    abstract member GlobalCleanup: unit -> unit
 
 
 type VectorEWiseBenchmarksWithoutDataTransfer<'elem when 'elem : struct>(
@@ -107,16 +107,17 @@ type VectorEWiseBenchmarksWithoutDataTransfer<'elem when 'elem : struct>(
 
     [<IterationSetup>]
     override this.IterationSetup() =
-        this.CreateVectors ()
-        this.LoadVectorsToGPU ()
+        this.CreateVectors()
+        this.LoadVectorsToGPU()
+        this.Processor.PostAndReply(Msg.MsgNotifyMe)
 
     [<Benchmark>]
-    override this.Benchmark () =
-        this.EWiseAddition()
+    override this.Benchmark() =
+        this.Map2Evaluation()
         this.Processor.PostAndReply(Msg.MsgNotifyMe)
 
     [<IterationCleanup>]
-    override this.IterationCleanup () =
+    override this.IterationCleanup() =
         this.ClearResult()
         this.ClearInputVectors()
 
@@ -141,7 +142,7 @@ type VectorEWiseBenchmarksWithDataTransfer<'elem when 'elem : struct>(
     [<Benchmark>]
     override this.Benchmark () =
         this.LoadVectorsToGPU()
-        this.EWiseAddition()
+        this.Map2Evaluation()
         this.Processor.PostAndReply Msg.MsgNotifyMe
         this.ResultVector.ToHost this.Processor |> ignore
         this.Processor.PostAndReply Msg.MsgNotifyMe

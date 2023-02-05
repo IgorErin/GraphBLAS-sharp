@@ -77,7 +77,7 @@ type Map2Benchmarks<'matrixT, 'elem when 'matrixT :> IDeviceMemObject and 'elem 
         reader.ReadMatrix converter
 
     member this.EWiseAddition() =
-        this.ResultMatrix <- this.FunToBenchmark this.Processor firstMatrix secondMatrix
+        this.ResultMatrix <- this.FunToBenchmark this.Processor HostInterop firstMatrix secondMatrix
 
     member this.ClearInputMatrices() =
         firstMatrix.Dispose this.Processor
@@ -94,13 +94,13 @@ type Map2Benchmarks<'matrixT, 'elem when 'matrixT :> IDeviceMemObject and 'elem 
         firstMatrix <- (buildMatrix firstMatrixHost).ToDevice this.OclContext
         secondMatrix <- (buildMatrix secondMatrixHost).ToDevice this.OclContext
 
-    abstract member GlobalSetup : unit -> unit
+    abstract member GlobalSetup: unit -> unit
 
-    abstract member IterationCleanup : unit -> unit
+    abstract member Benchmark: unit -> unit
 
-    abstract member GlobalCleanup : unit -> unit
+    abstract member IterationCleanup: unit -> unit
 
-    abstract member Benchmark : unit -> unit
+    abstract member GlobalCleanup: unit -> unit
 
 type Map2BenchmarksWithoutDataTransfer<'matrixT, 'elem when 'matrixT :> IDeviceMemObject and 'elem : struct>(
         buildFunToBenchmark,
@@ -118,6 +118,12 @@ type Map2BenchmarksWithoutDataTransfer<'matrixT, 'elem when 'matrixT :> IDeviceM
     override this.GlobalSetup() =
         this.ReadMatrices ()
         this.LoadMatricesToGPU ()
+        this.Processor.PostAndReply(Msg.MsgNotifyMe)
+
+    [<Benchmark>]
+    override this.Benchmark () =
+        this.EWiseAddition()
+        this.Processor.PostAndReply(Msg.MsgNotifyMe)
 
     [<IterationCleanup>]
     override this.IterationCleanup () =
@@ -126,11 +132,6 @@ type Map2BenchmarksWithoutDataTransfer<'matrixT, 'elem when 'matrixT :> IDeviceM
     [<GlobalCleanup>]
     override this.GlobalCleanup () =
         this.ClearInputMatrices()
-
-    [<Benchmark>]
-    override this.Benchmark () =
-        this.EWiseAddition()
-        this.Processor.PostAndReply(Msg.MsgNotifyMe)
 
 type Map2BenchmarksWithDataTransfer<'matrixT, 'elem when 'matrixT :> IDeviceMemObject and 'elem : struct>(
         buildFunToBenchmark,
@@ -146,19 +147,19 @@ type Map2BenchmarksWithDataTransfer<'matrixT, 'elem when 'matrixT :> IDeviceMemO
         buildMatrix)
 
     [<GlobalSetup>]
-    override this.GlobalSetup () =
-        this.ReadMatrices ()
+    override this.GlobalSetup() =
+        this.ReadMatrices()
 
     [<GlobalCleanup>]
-    override this.GlobalCleanup () = ()
+    override this.GlobalCleanup() = ()
 
     [<IterationCleanup>]
-    override this.IterationCleanup () =
+    override this.IterationCleanup() =
         this.ClearInputMatrices()
         this.ClearResult()
 
     [<Benchmark>]
-    override this.Benchmark () =
+    override this.Benchmark() =
         this.LoadMatricesToGPU()
         this.EWiseAddition()
         this.Processor.PostAndReply Msg.MsgNotifyMe
@@ -168,7 +169,7 @@ type Map2BenchmarksWithDataTransfer<'matrixT, 'elem when 'matrixT :> IDeviceMemO
 type Map2Float32COOWithoutTransfer() =
 
     inherit Map2BenchmarksWithoutDataTransfer<ClMatrix.COO<float32>,float32>(
-        (fun context wgSize -> Matrix.elementwise context ArithmeticOperations.float32Sum wgSize HostInterop),
+        (fun context -> Matrix.map2 context ArithmeticOperations.float32Sum),
         float32,
         (fun _ -> Utils.nextSingle (System.Random())),
         Matrix.COO
@@ -180,7 +181,7 @@ type Map2Float32COOWithoutTransfer() =
 type Map2Float32COOWithTransfer() =
 
     inherit Map2BenchmarksWithDataTransfer<ClMatrix.COO<float32>,float32>(
-        (fun context wgSize -> Matrix.elementwise context ArithmeticOperations.float32Sum wgSize HostInterop),
+        (fun context -> Matrix.map2 context ArithmeticOperations.float32Sum),
         float32,
         (fun _ -> Utils.nextSingle (System.Random())),
         Matrix.COO,
@@ -194,7 +195,7 @@ type Map2Float32COOWithTransfer() =
 type Map2BoolCOOWithoutTransfer() =
 
     inherit Map2BenchmarksWithoutDataTransfer<ClMatrix.COO<bool>,bool>(
-        (fun context wgSize -> Matrix.elementwise context ArithmeticOperations.boolSum wgSize HostInterop),
+        (fun context -> Matrix.map2 context ArithmeticOperations.boolSum),
         (fun _ -> true),
         (fun _ -> true),
         Matrix.COO
@@ -207,7 +208,7 @@ type Map2BoolCOOWithoutTransfer() =
 type Map2Float32CSRWithoutTransfer() =
 
     inherit Map2BenchmarksWithoutDataTransfer<ClMatrix.CSR<float32>,float32>(
-        (fun context wgSize -> Matrix.elementwise context ArithmeticOperations.float32Sum wgSize HostInterop),
+        (fun context -> Matrix.map2 context ArithmeticOperations.float32Sum),
         float32,
         (fun _ -> Utils.nextSingle (System.Random())),
         (fun matrix -> Matrix.CSR matrix.ToCSR)
@@ -220,7 +221,7 @@ type Map2Float32CSRWithoutTransfer() =
 type Map2BoolCSRWithoutTransfer() =
 
     inherit Map2BenchmarksWithoutDataTransfer<ClMatrix.CSR<bool>,bool>(
-        (fun context wgSize -> Matrix.elementwise context ArithmeticOperations.boolSum wgSize HostInterop),
+        (fun context -> Matrix.map2 context ArithmeticOperations.boolSum),
         (fun _ -> true),
         (fun _ -> true),
         (fun matrix -> Matrix.CSR matrix.ToCSR)
@@ -234,7 +235,7 @@ type Map2BoolCSRWithoutTransfer() =
 type EWiseAddAtLeastOneBenchmarks4BoolCOOWithoutDataTransfer() =
 
     inherit Map2BenchmarksWithoutDataTransfer<ClMatrix.COO<bool>,bool>(
-        (fun context wgSize -> Matrix.elementwiseAtLeastOne context ArithmeticOperations.boolSumAtLeastOne wgSize HostInterop),
+        (fun context -> Matrix.map2AtLeastOne context ArithmeticOperations.boolSumAtLeastOne),
         (fun _ -> true),
         (fun _ -> true),
         Matrix.COO
@@ -246,7 +247,7 @@ type EWiseAddAtLeastOneBenchmarks4BoolCOOWithoutDataTransfer() =
 type EWiseAddAtLeastOneBenchmarks4BoolCSRWithoutDataTransfer() =
 
     inherit Map2BenchmarksWithoutDataTransfer<ClMatrix.CSR<bool>,bool>(
-        (fun context wgSize -> Matrix.elementwiseAtLeastOne context ArithmeticOperations.boolSumAtLeastOne wgSize HostInterop),
+        (fun context -> Matrix.map2AtLeastOne context ArithmeticOperations.boolSumAtLeastOne),
         (fun _ -> true),
         (fun _ -> true),
         (fun matrix -> Matrix.CSR matrix.ToCSR)
@@ -258,7 +259,7 @@ type EWiseAddAtLeastOneBenchmarks4BoolCSRWithoutDataTransfer() =
 type EWiseAddAtLeastOneBenchmarks4Float32COOWithoutDataTransfer() =
 
     inherit Map2BenchmarksWithoutDataTransfer<ClMatrix.COO<float32>,float32>(
-        (fun context wgSize -> Matrix.elementwiseAtLeastOne context ArithmeticOperations.float32SumAtLeastOne wgSize HostInterop),
+        (fun context -> Matrix.map2AtLeastOne context ArithmeticOperations.float32SumAtLeastOne),
         float32,
         (fun _ -> Utils.nextSingle (System.Random())),
         Matrix.COO
@@ -270,7 +271,7 @@ type EWiseAddAtLeastOneBenchmarks4Float32COOWithoutDataTransfer() =
 type EWiseAddAtLeastOneBenchmarks4Float32CSRWithoutDataTransfer() =
 
     inherit Map2BenchmarksWithoutDataTransfer<ClMatrix.CSR<float32>,float32>(
-        (fun context wgSize -> Matrix.elementwiseAtLeastOne context ArithmeticOperations.float32SumAtLeastOne wgSize HostInterop),
+        (fun context -> Matrix.map2AtLeastOne context ArithmeticOperations.float32SumAtLeastOne),
         float32,
         (fun _ -> Utils.nextSingle (System.Random())),
         (fun matrix -> Matrix.CSR matrix.ToCSR)
