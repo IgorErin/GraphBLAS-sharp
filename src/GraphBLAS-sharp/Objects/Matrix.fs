@@ -170,7 +170,7 @@ type Matrix<'a when 'a: struct> =
         | COO matrix -> matrix.ColumnCount
         | CSC matrix -> matrix.ColumnCount
 
-    member this.NNZCount =
+    member this.NNZ =
         match this with
         | COO m -> m.Values.Length
         | CSR m -> m.Values.Length
