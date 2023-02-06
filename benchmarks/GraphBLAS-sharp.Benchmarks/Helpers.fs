@@ -1,4 +1,4 @@
-namespace rec GraphBLAS.FSharp.Benchmarks
+namespace GraphBLAS.FSharp.Benchmarks
 
 open BenchmarkDotNet.Columns
 open BenchmarkDotNet.Reports
@@ -6,6 +6,7 @@ open BenchmarkDotNet.Running
 open BenchmarkDotNet.Toolchains.InProcess.Emit
 open Brahma.FSharp
 open Brahma.FSharp.OpenCL.Translator
+open GraphBLAS.FSharp.Backend.Objects
 open OpenCL.Net
 open GraphBLAS.FSharp.IO
 open System.IO
@@ -15,6 +16,99 @@ open BenchmarkDotNet.Jobs
 open GraphBLAS.FSharp.Tests
 open FsCheck
 open Expecto
+
+type TEPSColumn() =
+    interface IColumn with
+        member this.AlwaysShow: bool = true
+        member this.Category: ColumnCategory = ColumnCategory.Statistics
+        member this.ColumnName: string = "TEPS"
+
+        member this.GetValue(summary: Summary, benchmarkCase: BenchmarkCase) : string =
+            let inputMatrixReader =
+                benchmarkCase.Parameters.["InputMatrixReader"] :?> MtxReader * MtxReader
+                |> fst
+
+            let matrixShape = inputMatrixReader.ReadMatrixShape()
+
+            let (nrows, ncols) =
+                matrixShape.RowCount, matrixShape.ColumnCount
+
+            let (vertices, edges) =
+                match inputMatrixReader.Format with
+                | Coordinate ->
+                    if nrows = ncols then
+                        (nrows, matrixShape.Nnz)
+                    else
+                        (ncols, nrows)
+                | _ -> failwith "Unsupported"
+
+            if isNull summary.[benchmarkCase].ResultStatistics then
+                "NA"
+            else
+                let meanTime =
+                    summary.[benchmarkCase].ResultStatistics.Mean
+
+                sprintf "%f" <| float edges / (meanTime * 1e-6)
+
+        member this.GetValue(summary: Summary, benchmarkCase: BenchmarkCase, style: SummaryStyle) : string =
+            (this :> IColumn).GetValue(summary, benchmarkCase)
+
+        member this.Id: string = "TEPSColumn"
+        member this.IsAvailable(summary: Summary) : bool = true
+        member this.IsDefault(summary: Summary, benchmarkCase: BenchmarkCase) : bool = false
+        member this.IsNumeric: bool = true
+        member this.Legend: string = "Traversed edges per second"
+        member this.PriorityInCategory: int = 0
+        member this.UnitType: UnitType = UnitType.Dimensionless
+
+type MatrixColumn(columnName: string, getShape: MtxReader -> int) =
+    interface IColumn with
+        member this.AlwaysShow: bool = true
+        member this.Category: ColumnCategory = ColumnCategory.Params
+        member this.ColumnName: string = columnName
+
+        member this.GetValue(summary: Summary, benchmarkCase: BenchmarkCase) : string =
+            benchmarkCase.Parameters.["InputMatrixReader"] :?> MtxReader
+            |> getShape
+            |> sprintf "%i"
+
+        member this.GetValue(summary: Summary, benchmarkCase: BenchmarkCase, style: SummaryStyle) : string =
+            (this :> IColumn).GetValue(summary, benchmarkCase)
+
+        member this.Id: string =
+            sprintf "%s.%s" "MatrixColumn" columnName
+
+        member this.IsAvailable(_: Summary) : bool = true
+        member this.IsDefault(_: Summary, _: BenchmarkCase) : bool = false
+        member this.IsNumeric: bool = true
+        member this.Legend: string = sprintf "%s of input matrix" columnName
+        member this.PriorityInCategory: int = 1
+        member this.UnitType: UnitType = UnitType.Size
+
+type MatrixPairColumn(columnName: string, getShape: (MtxReader * MtxReader) -> int) =
+    interface IColumn with
+        member this.AlwaysShow: bool = true
+        member this.Category: ColumnCategory = ColumnCategory.Params
+        member this.ColumnName: string = columnName
+
+        member this.GetValue(summary: Summary, benchmarkCase: BenchmarkCase) : string =
+            let inputMatrix =
+                benchmarkCase.Parameters.["InputMatrixReader"] :?> MtxReader * MtxReader
+
+            sprintf "%i" <| getShape inputMatrix
+
+        member this.GetValue(summary: Summary, benchmarkCase: BenchmarkCase, style: SummaryStyle) : string =
+            (this :> IColumn).GetValue(summary, benchmarkCase)
+
+        member this.Id: string =
+            sprintf "%s.%s" "MatrixShapeColumn" columnName
+
+        member this.IsAvailable(_: Summary) : bool = true
+        member this.IsDefault(_: Summary, _: BenchmarkCase) : bool = false
+        member this.IsNumeric: bool = true
+        member this.Legend: string = sprintf "%s of input matrix" columnName
+        member this.PriorityInCategory: int = 1
+        member this.UnitType: UnitType = UnitType.Size
 
 type CommonConfig() =
     inherit ManualConfig()
@@ -69,56 +163,6 @@ type Config() =
         )
         |> ignore
 
-
-type MatrixColumn(columnName: string, getShape: MtxReader -> int) =
-    interface IColumn with
-        member this.AlwaysShow: bool = true
-        member this.Category: ColumnCategory = ColumnCategory.Params
-        member this.ColumnName: string = columnName
-
-        member this.GetValue(summary: Summary, benchmarkCase: BenchmarkCase) : string =
-            benchmarkCase.Parameters.["InputMatrixReader"] :?> MtxReader
-            |> getShape
-            |> sprintf "%i"
-
-        member this.GetValue(summary: Summary, benchmarkCase: BenchmarkCase, style: SummaryStyle) : string =
-            (this :> IColumn).GetValue(summary, benchmarkCase)
-
-        member this.Id: string =
-            sprintf "%s.%s" "MatrixColumn" columnName
-
-        member this.IsAvailable(_: Summary) : bool = true
-        member this.IsDefault(_: Summary, _: BenchmarkCase) : bool = false
-        member this.IsNumeric: bool = true
-        member this.Legend: string = sprintf "%s of input matrix" columnName
-        member this.PriorityInCategory: int = 1
-        member this.UnitType: UnitType = UnitType.Size
-
-type MatrixPairColumn(columnName: string, getShape: (MtxReader * MtxReader) -> int) =
-    interface IColumn with
-        member this.AlwaysShow: bool = true
-        member this.Category: ColumnCategory = ColumnCategory.Params
-        member this.ColumnName: string = columnName
-
-        member this.GetValue(summary: Summary, benchmarkCase: BenchmarkCase) : string =
-            let inputMatrix =
-                benchmarkCase.Parameters.["InputMatrixReader"] :?> MtxReader * MtxReader
-
-            sprintf "%i" <| getShape inputMatrix
-
-        member this.GetValue(summary: Summary, benchmarkCase: BenchmarkCase, style: SummaryStyle) : string =
-            (this :> IColumn).GetValue(summary, benchmarkCase)
-
-        member this.Id: string =
-            sprintf "%s.%s" "MatrixShapeColumn" columnName
-
-        member this.IsAvailable(_: Summary) : bool = true
-        member this.IsDefault(_: Summary, _: BenchmarkCase) : bool = false
-        member this.IsNumeric: bool = true
-        member this.Legend: string = sprintf "%s of input matrix" columnName
-        member this.PriorityInCategory: int = 1
-        member this.UnitType: UnitType = UnitType.Size
-
 type SingleMatrixConfig() =
     inherit ManualConfig()
 
@@ -148,50 +192,6 @@ type SingleMatrixConfig() =
                 .WithInvocationCount(3)
         )
         |> ignore
-
-type TEPSColumn() =
-    interface IColumn with
-        member this.AlwaysShow: bool = true
-        member this.Category: ColumnCategory = ColumnCategory.Statistics
-        member this.ColumnName: string = "TEPS"
-
-        member this.GetValue(summary: Summary, benchmarkCase: BenchmarkCase) : string =
-            let inputMatrixReader =
-                benchmarkCase.Parameters.["InputMatrixReader"] :?> MtxReader * MtxReader
-                |> fst
-
-            let matrixShape = inputMatrixReader.ReadMatrixShape()
-
-            let (nrows, ncols) =
-                matrixShape.RowCount, matrixShape.ColumnCount
-
-            let (vertices, edges) =
-                match inputMatrixReader.Format with
-                | Coordinate ->
-                    if nrows = ncols then
-                        (nrows, matrixShape.Nnz)
-                    else
-                        (ncols, nrows)
-                | _ -> failwith "Unsupported"
-
-            if isNull summary.[benchmarkCase].ResultStatistics then
-                "NA"
-            else
-                let meanTime =
-                    summary.[benchmarkCase].ResultStatistics.Mean
-
-                sprintf "%f" <| float edges / (meanTime * 1e-6)
-
-        member this.GetValue(summary: Summary, benchmarkCase: BenchmarkCase, style: SummaryStyle) : string =
-            (this :> IColumn).GetValue(summary, benchmarkCase)
-
-        member this.Id: string = "TEPSColumn"
-        member this.IsAvailable(summary: Summary) : bool = true
-        member this.IsDefault(summary: Summary, benchmarkCase: BenchmarkCase) : bool = false
-        member this.IsNumeric: bool = true
-        member this.Legend: string = "Traversed edges per second"
-        member this.PriorityInCategory: int = 0
-        member this.UnitType: UnitType = UnitType.Dimensionless
 
 module Utils =
     type BenchmarkContext =
@@ -311,6 +311,34 @@ module Utils =
         random.NextBytes buffer
         System.BitConverter.ToSingle(buffer, 0)
 
+module Operations =
+    let inline add () = <@ fun x y -> Some(x + y) @>
+
+    let addWithFilter = <@ fun x y ->
+        let res = x + y
+        if abs res < 1e-8f then None else Some res
+    @>
+
+    let inline mult () = <@ fun x y -> Some <|x * y @>
+
+    let logicalOr = <@ fun x y ->
+        let mutable res = None
+
+        match x, y with
+        | false, false -> res <- None
+        | _            -> res <- Some true
+
+        res @>
+
+    let logicalAnd = <@ fun x y ->
+        let mutable res = None
+
+        match x, y with
+        | true, true -> res <- Some true
+        | _          -> res <- None
+
+        res @>
+
 module VectorGenerator =
     let private pairOfVectorsOfEqualSize (valuesGenerator: Gen<'a>) createVector =
         gen {
@@ -362,5 +390,32 @@ module MatrixGenerator =
 
         fun array -> Utils.createMatrixFromArray2D format array (fIsEqual 0.0)
         |> pairOfMatricesOfEqualSizeGenerator normalFloatGenerator
+
+    let private pairOfMatricesWithMaskOfEqualSizeGenerator (valuesGenerator: Gen<'a>) format createMatrix =
+        gen {
+            let! nrows, ncols = Generators.dimension2DGenerator
+            let! matrixA = valuesGenerator |> Gen.array2DOfDim (nrows, ncols)
+            let! matrixB = valuesGenerator |> Gen.array2DOfDim (nrows, ncols)
+            let! mask = valuesGenerator |> Gen.array2DOfDim (nrows, ncols)
+
+            return (createMatrix format matrixA,
+                    createMatrix format matrixB,
+                    createMatrix COO mask)
+        }
+
+    let intPairWithMaskOfEqualSizes format =
+        fun format array -> Utils.createMatrixFromArray2D format array ((=) 0)
+        |> pairOfMatricesWithMaskOfEqualSizeGenerator Arb.generate<int32> format
+
+    let floatPairWithMaskOfEqualSizes format =
+        let normalFloatGenerator =
+            (Arb.Default.NormalFloat()
+            |> Arb.toGen
+            |> Gen.map float)
+
+        let fIsEqual x y = abs (x - y) < Accuracy.medium.absolute || x = y
+
+        fun format array -> Utils.createMatrixFromArray2D format array (fIsEqual 0.0)
+        |> pairOfMatricesWithMaskOfEqualSizeGenerator normalFloatGenerator format
 
 
