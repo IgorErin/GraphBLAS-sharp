@@ -70,7 +70,7 @@ type MatrixMap2Benchmarks<'elem when 'elem : struct>
         firstMatrix <- firstMatrixHost.ToDevice this.OclContext
         secondMatrix <- secondMatrixHost.ToDevice this.OclContext
 
-    member this.EWiseAddition() =
+    member this.Map2() =
         this.ResultMatrix <- this.FunToBenchmark this.Processor HostInterop firstMatrix secondMatrix
 
     member this.ClearInputMatrices() =
@@ -109,7 +109,7 @@ type MatrixMap2SyntheticWithoutTransfer<'elem when 'elem : struct>(
 
     [<Benchmark>]
     override this.Benchmark() =
-        this.EWiseAddition()
+        this.Map2()
         this.Processor.PostAndReply(Msg.MsgNotifyMe)
 
     [<IterationCleanup>]

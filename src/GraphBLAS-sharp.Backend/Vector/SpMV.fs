@@ -139,7 +139,6 @@ module SpMV =
             )
 
             queue.Post(Msg.CreateRunMsg<_, _>(reduceValuesByRows))
-
             queue.Post(Msg.CreateFreeMsg intermediateArray)
 
     let run
@@ -150,11 +149,13 @@ module SpMV =
         =
         let runTo = runTo clContext add mul workGroupSize
 
-        fun (queue: MailboxProcessor<_>) allocationMode (matrix: ClMatrix.CSR<'a>) (vector: ClArray<'b option>) ->
+        fun (queue: MailboxProcessor<_>) allocationMode (matrix: ClMatrix<'a>) (vector: ClVector<'b>) ->
+            match matrix, vector with
+            | ClMatrix.CSR matrix, ClVector.Dense vector ->
+                let result =
+                    clContext.CreateClArrayWithSpecificAllocationMode<'c option>(allocationMode, matrix.RowCount)
 
-            let result =
-                clContext.CreateClArrayWithSpecificAllocationMode<'c option>(allocationMode, matrix.RowCount)
+                runTo queue matrix vector result
 
-            runTo queue matrix vector result
-
-            result
+                ClVector.Dense result
+            | _ -> failwith "incompatible types, the vector format should be Dense, the format of the matrix --- CSR"

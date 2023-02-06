@@ -66,7 +66,7 @@ type VectorEWiseBenchmarks<'elem when 'elem : struct>(
             x
         | Some x -> x
 
-    member this.Map2Evaluation() =
+    member this.Map2() =
         this.ResultVector <- this.FunToBenchmark this.Processor HostInterop firstVector secondVector
 
     member this.ClearInputVectors()=
@@ -113,7 +113,7 @@ type VectorEWiseBenchmarksWithoutDataTransfer<'elem when 'elem : struct>(
 
     [<Benchmark>]
     override this.Benchmark() =
-        this.Map2Evaluation()
+        this.Map2()
         this.Processor.PostAndReply(Msg.MsgNotifyMe)
 
     [<IterationCleanup>]
@@ -142,7 +142,7 @@ type VectorEWiseBenchmarksWithDataTransfer<'elem when 'elem : struct>(
     [<Benchmark>]
     override this.Benchmark () =
         this.LoadVectorsToGPU()
-        this.Map2Evaluation()
+        this.Map2()
         this.Processor.PostAndReply Msg.MsgNotifyMe
         this.ResultVector.ToHost this.Processor |> ignore
         this.Processor.PostAndReply Msg.MsgNotifyMe

@@ -6,7 +6,9 @@ open BenchmarkDotNet.Running
 open BenchmarkDotNet.Toolchains.InProcess.Emit
 open Brahma.FSharp
 open Brahma.FSharp.OpenCL.Translator
+open Brahma.FSharp.OpenCL.Translator.QuotationTransformers
 open GraphBLAS.FSharp.Backend.Objects
+open MathNet.Numerics.LinearAlgebra
 open OpenCL.Net
 open GraphBLAS.FSharp.IO
 open System.IO
@@ -311,6 +313,13 @@ module Utils =
         random.NextBytes buffer
         System.BitConverter.ToSingle(buffer, 0)
 
+    let normalFloatGenerator =
+        (Arb.Default.NormalFloat()
+        |> Arb.toGen
+        |> Gen.map float)
+
+    let fIsEqual x y = abs (x - y) < Accuracy.medium.absolute || x.Equals y
+
 module Operations =
     let inline add () = <@ fun x y -> Some(x + y) @>
 
@@ -356,23 +365,19 @@ module VectorGenerator =
         |> pairOfVectorsOfEqualSize Arb.generate<int32>
 
     let floatPair format =
-        let normalFloatGenerator =
-            (Arb.Default.NormalFloat()
-            |> Arb.toGen
-            |> Gen.map float)
-
         let fIsEqual x y = abs (x - y) < Accuracy.medium.absolute || x = y
 
         let createVector array = Utils.createVectorFromArray format array (fIsEqual 0.0)
 
-        pairOfVectorsOfEqualSize normalFloatGenerator createVector
+        pairOfVectorsOfEqualSize Utils.normalFloatGenerator createVector
+
 
 module MatrixGenerator =
     let private pairOfMatricesOfEqualSizeGenerator (valuesGenerator: Gen<'a>) createMatrix =
         gen {
-            let! nrows, ncols = Generators.dimension2DGenerator
-            let! matrixA = valuesGenerator |> Gen.array2DOfDim (nrows, ncols)
-            let! matrixB = valuesGenerator |> Gen.array2DOfDim (nrows, ncols)
+            let! rowsCount, columnsCount = Generators.dimension2DGenerator
+            let! matrixA = valuesGenerator |> Gen.array2DOfDim (rowsCount, columnsCount)
+            let! matrixB = valuesGenerator |> Gen.array2DOfDim (rowsCount, columnsCount)
             return (createMatrix matrixA, createMatrix matrixB)
         }
 
@@ -381,22 +386,15 @@ module MatrixGenerator =
         |> pairOfMatricesOfEqualSizeGenerator Arb.generate<int32>
 
     let floatPairOfEqualSizes format =
-        let normalFloatGenerator =
-            (Arb.Default.NormalFloat()
-            |> Arb.toGen
-            |> Gen.map float)
-
-        let fIsEqual x y = abs (x - y) < Accuracy.medium.absolute || x = y
-
-        fun array -> Utils.createMatrixFromArray2D format array (fIsEqual 0.0)
-        |> pairOfMatricesOfEqualSizeGenerator normalFloatGenerator
+        fun array -> Utils.createMatrixFromArray2D format array (Utils.fIsEqual 0.0)
+        |> pairOfMatricesOfEqualSizeGenerator Utils.normalFloatGenerator
 
     let private pairOfMatricesWithMaskOfEqualSizeGenerator (valuesGenerator: Gen<'a>) format createMatrix =
         gen {
-            let! nrows, ncols = Generators.dimension2DGenerator
-            let! matrixA = valuesGenerator |> Gen.array2DOfDim (nrows, ncols)
-            let! matrixB = valuesGenerator |> Gen.array2DOfDim (nrows, ncols)
-            let! mask = valuesGenerator |> Gen.array2DOfDim (nrows, ncols)
+            let! rowsCount, columnsCount = Generators.dimension2DGenerator
+            let! matrixA = valuesGenerator |> Gen.array2DOfDim (rowsCount, columnsCount)
+            let! matrixB = valuesGenerator |> Gen.array2DOfDim (rowsCount, columnsCount)
+            let! mask = valuesGenerator |> Gen.array2DOfDim (rowsCount, columnsCount)
 
             return (createMatrix format matrixA,
                     createMatrix format matrixB,
@@ -408,14 +406,29 @@ module MatrixGenerator =
         |> pairOfMatricesWithMaskOfEqualSizeGenerator Arb.generate<int32> format
 
     let floatPairWithMaskOfEqualSizes format =
-        let normalFloatGenerator =
-            (Arb.Default.NormalFloat()
-            |> Arb.toGen
-            |> Gen.map float)
+        fun format array -> Utils.createMatrixFromArray2D format array (Utils.fIsEqual 0.0)
+        |> pairOfMatricesWithMaskOfEqualSizeGenerator Utils.normalFloatGenerator format
 
-        let fIsEqual x y = abs (x - y) < Accuracy.medium.absolute || x = y
+module MatrixVectorGenerator =
+    let private pairOfMatricesAndVectorGenerator (valuesGenerator: Gen<'a>) createVector createMatrix =
+        gen {
+            let! rowsCount, columnsCount = Generators.dimension2DGenerator
+            let! matrixA = valuesGenerator |> Gen.array2DOfDim (rowsCount, columnsCount)
+            let! vector = valuesGenerator |> Gen.arrayOfLength columnsCount
 
-        fun format array -> Utils.createMatrixFromArray2D format array (fIsEqual 0.0)
-        |> pairOfMatricesWithMaskOfEqualSizeGenerator normalFloatGenerator format
+            return (createMatrix matrixA, createVector vector)
+        }
+
+    let intPairOfCompatibleSizes matrixFormat vectorFormat =
+        let createVector array = Utils.createVectorFromArray vectorFormat array ((=) 0)
+        let createMatrix array = Utils.createMatrixFromArray2D matrixFormat array ((=) 0)
+
+        pairOfMatricesAndVectorGenerator Arb.generate<int32> createVector createMatrix
+
+    let floatPairOfCompatibleSizes matrixFormat vectorFormat =
+        let createVector array = Utils.createVectorFromArray vectorFormat array (Utils.floatIsEqual 0.0)
+        let createMatrix array = Utils.createMatrixFromArray2D matrixFormat array (Utils.floatIsEqual 0.0)
+
+        pairOfMatricesAndVectorGenerator Utils.normalFloatGenerator createVector createMatrix
 
 

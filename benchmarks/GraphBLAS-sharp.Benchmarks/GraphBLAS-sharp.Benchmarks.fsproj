@@ -27,6 +27,7 @@
     <Compile Include="Synthetic\MatrixMap2.fs" />
     <Compile Include="Synthetic\VectorMap2.fs" />
     <Compile Include="Synthetic\Mxm.fs" />
+    <Compile Include="Synthetic\Mxv.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />

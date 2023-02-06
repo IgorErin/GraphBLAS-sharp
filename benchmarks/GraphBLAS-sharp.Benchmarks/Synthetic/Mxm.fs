@@ -88,7 +88,7 @@ type MxmSynthetic<'elem when 'elem : struct>(
         else
             this.CreatAnsSetMatrices()
 
-    member this.Mxm() =
+    member this.Mxv() =
         this.ResultMatrix <- this.FunToBenchmark this.Processor firstMatrix secondMatrix mask
 
     member this.ClearInputMatrices() =
@@ -140,7 +140,7 @@ type MxmSyntheticMultiplicationOnly<'elem when 'elem : struct>(
 
     [<Benchmark>]
     override this.Benchmark() =
-        this.Mxm()
+        this.Mxv()
         this.Processor.PostAndReply Msg.MsgNotifyMe
 
     [<IterationCleanup>]
@@ -171,7 +171,7 @@ type MxmSyntheticWithTransposing<'elem when 'elem : struct>(
     [<Benchmark>]
     override this.Benchmark() =
         this.ConvertSecondMatrixToCSC()
-        this.Mxm()
+        this.Mxv()
         this.Processor.PostAndReply Msg.MsgNotifyMe
 
     [<IterationCleanup>]

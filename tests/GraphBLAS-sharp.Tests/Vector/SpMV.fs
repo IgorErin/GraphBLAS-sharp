@@ -2,7 +2,6 @@
 
 open GraphBLAS.FSharp.Backend.Objects.ArraysExtensions
 open Expecto
-open Brahma.FSharp
 open GraphBLAS.FSharp.Backend.Quotes
 open GraphBLAS.FSharp.Tests.Utils
 open GraphBLAS.FSharp.Tests.Context
@@ -13,6 +12,7 @@ open GraphBLAS.FSharp.Backend.Objects
 open GraphBLAS.FSharp.Backend.Vector
 open GraphBLAS.FSharp.Objects
 open GraphBLAS.FSharp.Backend.Objects.ClContext
+open GraphBLAS.FSharp.Objects.ClVectorExtensions
 
 let checkResult isEqual sumOp mulOp zero (baseMtx: 'a [,]) (baseVtr: 'a []) (actual: 'a option []) =
     let rows = Array2D.length1 baseMtx
@@ -48,7 +48,7 @@ let correctnessGenericTest
     zero
     sumOp
     mulOp
-    (spMV: MailboxProcessor<_> -> AllocationFlag -> ClMatrix.CSR<'a> -> ClArray<'a option> -> ClArray<'a option>)
+    (spMV: MailboxProcessor<_> -> AllocationFlag -> ClMatrix<'a> -> ClVector<'a> -> ClVector<'a>)
     (isEqual: 'a -> 'a -> bool)
     q
     (testContext: TestContext)
@@ -64,20 +64,16 @@ let correctnessGenericTest
     if mtx.NNZ > 0 && vtr.Size > 0 then
         try
             let m = mtx.ToDevice testContext.ClContext
+            let v = vtr.ToDevice testContext.ClContext
 
-            match vtr, m with
-            | Vector.Dense vtr, ClMatrix.CSR m ->
-                let v = vtr.ToDevice testContext.ClContext
+            let result = spMV testContext.Queue HostInterop m v
 
-                let res = spMV testContext.Queue HostInterop m v
+            m.Dispose q
+            v.Dispose q
+            let (Vector.Dense hostRes) = result.ToHost q
+            result.Dispose q
 
-                (ClMatrix.CSR m).Dispose q
-                v.Dispose q
-                let hostRes = res.ToHost q
-                res.Dispose q
-
-                checkResult isEqual sumOp mulOp zero matrix vector hostRes
-            | _ -> failwith "Impossible"
+            checkResult isEqual sumOp mulOp zero matrix vector hostRes
         with
         | ex when ex.Message = "InvalidBufferSize" -> ()
         | ex -> raise ex

@@ -51,7 +51,7 @@ type MtxReader(pathToFile: string) =
         while streamReader.Peek() = int '%' do
             streamReader.ReadLine() |> ignore
 
-        let matrixFromCoordinateFormat() : Matrix.COO<_> =
+        let matrixFromCoordinateFormat () : Matrix.COO<_> =
             let size =
                 streamReader.ReadLine().Split(' ')
                 |> Array.map int
