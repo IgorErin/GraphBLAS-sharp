@@ -22,10 +22,6 @@ jobs:
 
       - name: Build
         run: ./build.cmd DotnetBuild
-        env:
-          # Work around https://github.com/actions/setup-dotnet/issues/29
-          DOTNET_ROOT: ${{ runner.tool_cache }}/dncs/${{ matrix.dotnet }}/x64
-          CI: true
 
   win-test:
     name: Windows Build And Test
@@ -62,10 +58,6 @@ jobs:
 
       - name: Build And Test
         run: ./build.cmd
-        env:
-          # Work around https://github.com/actions/setup-dotnet/issues/29
-          DOTNET_ROOT: ${{ runner.tool_cache }}/dncs/${{ matrix.dotnet }}/x64
-          CI: true
 
   linux-build:
     name: Linux Build (No Tests)
@@ -83,10 +75,6 @@ jobs:
         run: |
           chmod +x ./build.sh
           ./build.sh DotnetBuild
-        env:
-          # Work around https://github.com/actions/setup-dotnet/issues/29
-          DOTNET_ROOT: ${{ runner.tool_cache }}/dncs/${{ matrix.dotnet }}/x64
-          CI: true
 
   linux-test:
     name: Linux Build And Test
@@ -115,10 +103,6 @@ jobs:
         run: |
           chmod +x ./build.sh
           ./build.sh
-        env:
-          # Work around https://github.com/actions/setup-dotnet/issues/29
-          DOTNET_ROOT: ${{ runner.tool_cache }}/dncs/${{ matrix.dotnet }}/x64
-          CI: true
 
   linux-test-self-hosted:
     name: Linux Self-Hosted Test
@@ -137,7 +121,3 @@ jobs:
         run: |
           chmod +x ./build.sh
           ./build.sh
-        env:
-          # Work around https://github.com/actions/setup-dotnet/issues/29
-          DOTNET_ROOT: ${{ runner.tool_cache }}/dncs/${{ matrix.dotnet }}/x64
-          CI: true
