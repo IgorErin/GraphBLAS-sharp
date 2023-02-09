@@ -199,7 +199,7 @@ type MxmBenchmarksWithTransposing<'elem when 'elem : struct>(
     override this.GlobalCleanup() =
         this.ClearInputMatrices()
 
-type Mxm4Float32MultiplicationOnly() =
+type Mxm4Float32MultiplicationOnlyBenchmark() =
 
     inherit MxmBenchmarksMultiplicationOnly<float32>(
         Matrix.mxm (Operations.add ()) (Operations.mult ()),
@@ -211,7 +211,7 @@ type Mxm4Float32MultiplicationOnly() =
     static member InputMatrixProvider =
         MxmBenchmarks<_>.InputMatrixProviderBuilder "MxmBenchmarks4Float32.txt"
 
-type Mxm4Float32WithTransposing() =
+type Mxm4Float32WithTransposingBenchmark() =
 
     inherit MxmBenchmarksWithTransposing<float32>(
         Matrix.mxm (Operations.add ()) (Operations.mult ()),
@@ -223,7 +223,7 @@ type Mxm4Float32WithTransposing() =
     static member InputMatrixProvider =
         MxmBenchmarks<_>.InputMatrixProviderBuilder "MxmBenchmarks4Float32.txt"
 
-type Mxm4BoolMultiplicationOnly() =
+type Mxm4BoolMultiplicationOnlyBenchmark() =
 
     inherit MxmBenchmarksMultiplicationOnly<bool>(
         (Matrix.mxm Operations.logicalOr Operations.logicalAnd),
@@ -235,7 +235,7 @@ type Mxm4BoolMultiplicationOnly() =
     static member InputMatrixProvider =
         MxmBenchmarks<_>.InputMatrixProviderBuilder "MxmBenchmarks4Bool.txt"
 
-type Mxm4BoolWithTransposing() =
+type Mxm4BoolWithTransposingBenchmark() =
 
     inherit MxmBenchmarksWithTransposing<bool>(
         (Matrix.mxm Operations.logicalOr Operations.logicalAnd),
@@ -247,7 +247,7 @@ type Mxm4BoolWithTransposing() =
     static member InputMatrixProvider =
         MxmBenchmarks<_>.InputMatrixProviderBuilder "MxmBenchmarks4Bool.txt"
 
-type MxmBenchmarks4Float32MultiplicationOnlyWithZerosFilter() =
+type Mxm4Float32MultiplicationOnlyWithZerosFilterBenchmark() =
 
     inherit MxmBenchmarksMultiplicationOnly<float32>(
         (Matrix.mxm Operations.addWithFilter (Operations.mult ())),
@@ -259,7 +259,7 @@ type MxmBenchmarks4Float32MultiplicationOnlyWithZerosFilter() =
     static member InputMatrixProvider =
         MxmBenchmarks<_>.InputMatrixProviderBuilder "MxmBenchmarks4Float32.txt"
 
-type MxmBenchmarks4Float32WithTransposingWithZerosFilter() =
+type Mxm4Float32WithTransposingWithZerosFilterBenchmark() =
 
     inherit MxmBenchmarksWithTransposing<float32>(
         Matrix.mxm Operations.addWithFilter (Operations.mult ()),

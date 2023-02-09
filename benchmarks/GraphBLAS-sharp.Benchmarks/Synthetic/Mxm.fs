@@ -13,7 +13,7 @@ open GraphBLAS.FSharp.Benchmarks
 [<IterationCount(100)>]
 [<WarmupCount(10)>]
 [<Config(typeof<Config>)>]
-type MxmSynthetic<'elem when 'elem : struct>(
+type MxmBenchmark<'elem when 'elem : struct>(
         buildFunToBenchmark,
         generator: Gen<Matrix<_>*Matrix<_>*Matrix<_>>) =
 
@@ -74,7 +74,7 @@ type MxmSynthetic<'elem when 'elem : struct>(
             x
         | Some x -> x
 
-    member this.CreatAnsSetMatrices() =
+    member this.CreatMatrices() =
         let firstMatrix, secondMatrix, mask = this.CreateMatricesAndMask()
 
         // TODO  Empty matrix
@@ -86,7 +86,7 @@ type MxmSynthetic<'elem when 'elem : struct>(
             firstMatrixHost <- secondMatrix
             secondMatrixHost <- mask
         else
-            this.CreatAnsSetMatrices()
+            this.CreatMatrices()
 
     member this.Mxv() =
         this.ResultMatrix <- this.FunToBenchmark this.Processor firstMatrix secondMatrix mask
@@ -120,11 +120,11 @@ type MxmSynthetic<'elem when 'elem : struct>(
 
     abstract member GlobalCleanup: unit -> unit
 
-type MxmSyntheticMultiplicationOnly<'elem when 'elem : struct>(
+type MxmMultiplicationOnly<'elem when 'elem : struct>(
         buildFunToBenchmark,
         buildMatrix) =
 
-    inherit MxmSynthetic<'elem>(
+    inherit MxmBenchmark<'elem>(
         buildFunToBenchmark,
         buildMatrix)
 
@@ -133,7 +133,7 @@ type MxmSyntheticMultiplicationOnly<'elem when 'elem : struct>(
 
     [<IterationSetup>]
     override this.IterationSetup() =
-        this.CreatAnsSetMatrices()
+        this.CreatMatrices()
         this.LoadMatricesToGPU()
         this.ConvertSecondMatrixToCSC()
         this.Processor.PostAndReply Msg.MsgNotifyMe
@@ -146,16 +146,16 @@ type MxmSyntheticMultiplicationOnly<'elem when 'elem : struct>(
     [<IterationCleanup>]
     override this.IterationCleanup() =
         this.ClearResult()
-
-    [<GlobalCleanup>]
-    override this.GlobalCleanup() =
         this.ClearInputMatrices()
 
-type MxmSyntheticWithTransposing<'elem when 'elem : struct>(
+    [<GlobalCleanup>]
+    override this.GlobalCleanup() = ()
+
+type MxmWithTransposing<'elem when 'elem : struct>(
         buildFunToBenchmark,
         generator) =
 
-    inherit MxmSynthetic<'elem>(
+    inherit MxmBenchmark<'elem>(
         buildFunToBenchmark,
         generator)
 
@@ -164,7 +164,7 @@ type MxmSyntheticWithTransposing<'elem when 'elem : struct>(
 
     [<IterationSetup>]
     override this.IterationSetup() =
-        this.CreatAnsSetMatrices()
+        this.CreatMatrices()
         this.LoadMatricesToGPU()
         this.Processor.PostAndReply Msg.MsgNotifyMe
 
@@ -176,24 +176,23 @@ type MxmSyntheticWithTransposing<'elem when 'elem : struct>(
 
     [<IterationCleanup>]
     override this.IterationCleanup() =
+        this.ClearInputMatrices()
         this.ClearResult()
-        this.ConvertSecondMatrixToCSR()
         this.Processor.PostAndReply Msg.MsgNotifyMe
 
     [<GlobalCleanup>]
-    override this.GlobalCleanup() =
-        this.ClearInputMatrices()
+    override this.GlobalCleanup() = ()
 
-type Mxm4Float32MultiplicationOnly() =
+type MxmFloatMultiplicationOnlyBenchmark() =
 
-    inherit MxmSyntheticMultiplicationOnly<float>(
+    inherit MxmMultiplicationOnly<float>(
         (Matrix.mxm (Operations.add ()) (Operations.mult ())),
         MatrixGenerator.floatPairWithMaskOfEqualSizes CSR
         )
 
-type Mxm4FloatWithTransposing() =
+type MxmFloatWithTransposingBenchmark() =
 
-    inherit MxmSyntheticWithTransposing<float>(
+    inherit MxmWithTransposing<float>(
         Matrix.mxm (Operations.add ()) (Operations.mult ()),
         MatrixGenerator.floatPairWithMaskOfEqualSizes CSR
         )

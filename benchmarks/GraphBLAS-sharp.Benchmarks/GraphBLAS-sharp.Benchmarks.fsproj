@@ -19,7 +19,6 @@
     <Compile Include="Helpers.fs" />
     <!--Compile Include="BenchmarksBFS.fs" /-->
     <!--Compile Include="BenchmarksTranspose.fs" /-->
-    <Compile Include="RealData\Mxv.fs" />
     <Compile Include="RealData\MatrixMap2.fs" />
     <Compile Include="RealData\Mxm.fs" />
     <Compile Include="RealData\MathNET.fs" />

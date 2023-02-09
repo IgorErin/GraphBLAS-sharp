@@ -166,7 +166,7 @@ type Map2BenchmarksWithDataTransfer<'matrixT, 'elem when 'matrixT :> IDeviceMemO
         resultToHost this.ResultMatrix this.Processor |> ignore
         this.Processor.PostAndReply Msg.MsgNotifyMe
 
-type Map2Float32COOWithoutTransfer() =
+type MatrixCOOMap2Float32WithoutTransferBenchmark() =
 
     inherit Map2BenchmarksWithoutDataTransfer<ClMatrix.COO<float32>,float32>(
         (fun context -> Matrix.map2 context ArithmeticOperations.float32Sum),
@@ -178,7 +178,7 @@ type Map2Float32COOWithoutTransfer() =
     static member InputMatricesProvider =
         Map2Benchmarks<_,_>.InputMatricesProviderBuilder "EWiseAddBenchmarks4Float32COO.txt"
 
-type Map2Float32COOWithTransfer() =
+type MatrixCOOMap2Float32WithTransferBenchmark() =
 
     inherit Map2BenchmarksWithDataTransfer<ClMatrix.COO<float32>,float32>(
         (fun context -> Matrix.map2 context ArithmeticOperations.float32Sum),
@@ -192,7 +192,7 @@ type Map2Float32COOWithTransfer() =
         Map2Benchmarks<_,_>.InputMatricesProviderBuilder "EWiseAddBenchmarks4Float32COO.txt"
 
 
-type Map2BoolCOOWithoutTransfer() =
+type MatrixCOOMap2BoolWithoutTransferBenchmark() =
 
     inherit Map2BenchmarksWithoutDataTransfer<ClMatrix.COO<bool>,bool>(
         (fun context -> Matrix.map2 context ArithmeticOperations.boolSum),
@@ -205,7 +205,7 @@ type Map2BoolCOOWithoutTransfer() =
         Map2Benchmarks<_, _>.InputMatricesProviderBuilder "EWiseAddBenchmarks4BoolCOO.txt"
 
 
-type Map2Float32CSRWithoutTransfer() =
+type MatrixCSRMap2Float32WithoutTransferBenchmark() =
 
     inherit Map2BenchmarksWithoutDataTransfer<ClMatrix.CSR<float32>,float32>(
         (fun context -> Matrix.map2 context ArithmeticOperations.float32Sum),
@@ -218,7 +218,7 @@ type Map2Float32CSRWithoutTransfer() =
         Map2Benchmarks<_, _>.InputMatricesProviderBuilder "EWiseAddBenchmarks4Float32CSR.txt"
 
 
-type Map2BoolCSRWithoutTransfer() =
+type MatrixCSRMap2BoolWithoutTransferBenchmark() =
 
     inherit Map2BenchmarksWithoutDataTransfer<ClMatrix.CSR<bool>,bool>(
         (fun context -> Matrix.map2 context ArithmeticOperations.boolSum),
@@ -232,7 +232,7 @@ type Map2BoolCSRWithoutTransfer() =
 
 // With AtLeastOne
 
-type EWiseAddAtLeastOneBenchmarks4BoolCOOWithoutDataTransfer() =
+type MatrixCOOMap2AtLeastOne4BoolWithoutTransferBenchmark() =
 
     inherit Map2BenchmarksWithoutDataTransfer<ClMatrix.COO<bool>,bool>(
         (fun context -> Matrix.map2AtLeastOne context ArithmeticOperations.boolSumAtLeastOne),
@@ -244,7 +244,7 @@ type EWiseAddAtLeastOneBenchmarks4BoolCOOWithoutDataTransfer() =
     static member InputMatricesProvider =
         Map2Benchmarks<_, _>.InputMatricesProviderBuilder "EWiseAddBenchmarks4BoolCSR.txt"
 
-type EWiseAddAtLeastOneBenchmarks4BoolCSRWithoutDataTransfer() =
+type MatrixCSRMap2AtLeastOne4BoolWithoutTransferBenchmark() =
 
     inherit Map2BenchmarksWithoutDataTransfer<ClMatrix.CSR<bool>,bool>(
         (fun context -> Matrix.map2AtLeastOne context ArithmeticOperations.boolSumAtLeastOne),
@@ -256,7 +256,7 @@ type EWiseAddAtLeastOneBenchmarks4BoolCSRWithoutDataTransfer() =
     static member InputMatricesProvider =
         Map2Benchmarks<_, _>.InputMatricesProviderBuilder "EWiseAddBenchmarks4BoolCSR.txt"
 
-type EWiseAddAtLeastOneBenchmarks4Float32COOWithoutDataTransfer() =
+type MatrixCOOMap2AtLeastOne4Float32WithoutTransferBenchmark() =
 
     inherit Map2BenchmarksWithoutDataTransfer<ClMatrix.COO<float32>,float32>(
         (fun context -> Matrix.map2AtLeastOne context ArithmeticOperations.float32SumAtLeastOne),
@@ -268,7 +268,7 @@ type EWiseAddAtLeastOneBenchmarks4Float32COOWithoutDataTransfer() =
     static member InputMatricesProvider =
         Map2Benchmarks<_,_>.InputMatricesProviderBuilder "EWiseAddBenchmarks4Float32COO.txt"
 
-type EWiseAddAtLeastOneBenchmarks4Float32CSRWithoutDataTransfer() =
+type MatrixCSRMap2AtLeastOne4Float32CSRWithoutTransferBenchmark() =
 
     inherit Map2BenchmarksWithoutDataTransfer<ClMatrix.CSR<float32>,float32>(
         (fun context -> Matrix.map2AtLeastOne context ArithmeticOperations.float32SumAtLeastOne),

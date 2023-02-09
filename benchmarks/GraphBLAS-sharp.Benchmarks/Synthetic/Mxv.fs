@@ -14,7 +14,7 @@ open GraphBLAS.FSharp.Benchmarks
 [<IterationCount(100)>]
 [<WarmupCount(10)>]
 [<Config(typeof<Config>)>]
-type MxvSynthetic<'elem when 'elem : struct>(
+type MxvBenchmark<'elem when 'elem : struct>(
         buildFunToBenchmark,
         generator: Gen<Matrix<_>*Vector<_>>) =
 
@@ -89,11 +89,11 @@ type MxvSynthetic<'elem when 'elem : struct>(
 
     abstract member GlobalCleanup: unit -> unit
 
-type MxvSyntheticMultiplicationOnly<'elem when 'elem : struct>(
+type MxvMultiplicationOnly<'elem when 'elem : struct>(
         buildFunToBenchmark,
         buildMatrix) =
 
-    inherit MxvSynthetic<'elem>(
+    inherit MxvBenchmark<'elem>(
         buildFunToBenchmark,
         buildMatrix)
 
@@ -119,17 +119,16 @@ type MxvSyntheticMultiplicationOnly<'elem when 'elem : struct>(
     [<GlobalCleanup>]
     override this.GlobalCleanup() = ()
 
+type MxvInt32Benchmark() =
 
-type MxvIntSynthetic() =
-
-    inherit MxvSyntheticMultiplicationOnly<int>(
+    inherit MxvMultiplicationOnly<int32>(
         (fun wgSize -> SpMV.run wgSize ArithmeticOperations.intSum ArithmeticOperations.intMul),
         MatrixVectorGenerator.intPairOfCompatibleSizes CSR Dense
         )
 
-type MxvFloatSynthetic() =
+type MxvFloatSyntheticBenchmark() =
 
-    inherit MxvSyntheticMultiplicationOnly<float>(
+    inherit MxvMultiplicationOnly<float>(
         (fun wgSize -> SpMV.run wgSize ArithmeticOperations.floatSum ArithmeticOperations.floatMul),
         MatrixVectorGenerator.floatPairOfCompatibleSizes CSR Dense
         )

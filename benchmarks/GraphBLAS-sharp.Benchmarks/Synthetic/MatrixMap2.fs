@@ -1,6 +1,5 @@
-namespace GraphBLAS.FSharp.Benchmarks.RealData
+namespace GraphBLAS.FSharp.Benchmarks.Synthetic
 
-open System.IO
 open FsCheck
 open GraphBLAS.FSharp.Backend.Quotes
 open BenchmarkDotNet.Attributes
@@ -90,7 +89,7 @@ type MatrixMap2Benchmarks<'elem when 'elem : struct>
 
     abstract member GlobalCleanup: unit -> unit
 
-type MatrixMap2SyntheticWithoutTransfer<'elem when 'elem : struct>(
+type MatrixMap2WithoutTransfer<'elem when 'elem : struct>(
         buildFunToBenchmark,
         generator) =
 
@@ -120,26 +119,26 @@ type MatrixMap2SyntheticWithoutTransfer<'elem when 'elem : struct>(
     [<GlobalCleanup>]
     override this.GlobalCleanup() = ()
 
-type MatrixCOOIntMap2Synthetic() =
+type MatrixCOOMap2IntWithoutTransferBenchmark() =
 
-    inherit MatrixMap2SyntheticWithoutTransfer<int>(
+    inherit MatrixMap2WithoutTransfer<int>(
         (fun clContext -> Matrix.map2 clContext ArithmeticOperations.intSum),
         MatrixGenerator.intPairOfEqualSizes COO)
 
-type MatrixCSRIntMap2Synthetic() =
+type MatrixCSRMap2IntWithoutTransferBenchmark() =
 
-    inherit MatrixMap2SyntheticWithoutTransfer<int>(
+    inherit MatrixMap2WithoutTransfer<int>(
         (fun clContext -> Matrix.map2 clContext ArithmeticOperations.intSum),
         MatrixGenerator.intPairOfEqualSizes CSR)
 
-type MatrixCOOFloatMap2Synthetic() =
+type MatrixCOOMap2FloatWithoutTransferBenchmark() =
 
-    inherit MatrixMap2SyntheticWithoutTransfer<float>(
+    inherit MatrixMap2WithoutTransfer<float>(
         (fun clContext -> Matrix.map2 clContext ArithmeticOperations.floatSum),
         MatrixGenerator.floatPairOfEqualSizes COO)
 
-type MatrixCSRFloatMap2Synthetic() =
+type MatrixCSRMap2FloatWithoutTransferBenchmark() =
 
-    inherit MatrixMap2SyntheticWithoutTransfer<float>(
+    inherit MatrixMap2WithoutTransfer<float>(
         (fun clContext -> Matrix.map2 clContext ArithmeticOperations.floatSum),
         MatrixGenerator.floatPairOfEqualSizes CSR)

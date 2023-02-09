@@ -3,16 +3,14 @@ open BenchmarkDotNet.Running
 
 [<EntryPoint>]
 let main argv =
-    let benchmarks =
-        BenchmarkSwitcher [| typeof<RealData.Map2Float32COOWithoutTransfer>
-                             typeof<RealData.Map2Float32COOWithTransfer>
-                             typeof<RealData.Map2Float32CSRWithoutTransfer>
-                             typeof<RealData.Map2BoolCOOWithoutTransfer>
-                             typeof<RealData.Map2BoolCSRWithoutTransfer>
-                             typeof<RealData.Mxm4Float32MultiplicationOnly>
-                             typeof<RealData.Mxm4Float32WithTransposing>
-                             typeof<RealData.Mxm4BoolMultiplicationOnly>
-                             typeof<RealData.Mxm4BoolWithTransposing> |]
+        let benchmarks =
+            BenchmarkSwitcher
+                [| typeof<Synthetic.MatrixCOOMap2IntWithoutTransferBenchmark>
+                   typeof<Synthetic.MatrixCSRMap2IntWithoutTransferBenchmark>
+                   typeof<Synthetic.VectorSparseMap2Int32WithoutTransferBenchmark>
+                   typeof<Synthetic.MxmFloatMultiplicationOnlyBenchmark>
+                   typeof<Synthetic.MxmFloatWithTransposingBenchmark>
+                   typeof<Synthetic.MxvInt32Benchmark> |]
 
-    benchmarks.Run argv |> ignore
-    0
+        benchmarks.Run argv |> ignore
+        0

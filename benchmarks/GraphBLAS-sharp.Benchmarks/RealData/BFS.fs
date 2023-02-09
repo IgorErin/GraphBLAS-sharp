@@ -154,7 +154,7 @@ type BFSBenchmarksWithTransfer<'elem when 'elem : struct>(
         this.ResultLevels.ToHost this.Processor |> ignore
         this.Processor.PostAndReply Msg.MsgNotifyMe
 
-type BFSBenchmarks4IntWithoutTransfer() =
+type BFSIntWithoutTransferBenchmark() =
 
     inherit BFSBenchmarksWithoutDataTransfer<int>(
         (fun context -> singleSource context ArithmeticOperations.intSum ArithmeticOperations.intMul),
@@ -165,7 +165,7 @@ type BFSBenchmarks4IntWithoutTransfer() =
     static member InputMatrixProvider =
         BFSBenchmarks<_>.InputMatrixProviderBuilder "BFSBenchmarks.txt"
 
-type BFSBenchmarks4IntWithTransfer() =
+type BFSIntWithTransferBenchmark() =
 
     inherit BFSBenchmarksWithTransfer<int>(
         (fun context -> singleSource context ArithmeticOperations.intSum ArithmeticOperations.intMul),
