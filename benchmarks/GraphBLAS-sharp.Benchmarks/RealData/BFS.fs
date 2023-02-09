@@ -35,7 +35,7 @@ type BFSBenchmarks<'elem when 'elem : struct>(
     [<ParamsSource("InputMatrixProvider")>]
     member val InputMatrixReader = Unchecked.defaultof<MtxReader> with get, set
 
-    member this.OclContext:ClContext = (fst this.OclContextInfo).ClContext
+    member this.OclContext = (fst this.OclContextInfo).ClContext
     member this.WorkGroupSize = snd this.OclContextInfo
 
     member this.Processor =
@@ -65,7 +65,7 @@ type BFSBenchmarks<'elem when 'elem : struct>(
             x
         | Some x -> x
 
-    member this.RunBFS() =
+    member this.BFS() =
         this.ResultLevels <- this.FunToBenchmark this.Processor matrix vertex
 
     member this.ClearInputMatrix() =
@@ -79,7 +79,7 @@ type BFSBenchmarks<'elem when 'elem : struct>(
             | Pattern -> binaryConverter
             | _ -> converter
 
-        matrixHost <- this.InputMatrixReader.ReadMatrix binaryConverter
+        matrixHost <- this.InputMatrixReader.ReadMatrix converter
 
     member this.LoadMatrixToGPU() =
         matrix <- matrixHost.ToCSR.ToDevice this.OclContext
@@ -119,8 +119,8 @@ type BFSBenchmarksWithoutDataTransfer<'elem when 'elem : struct>(
 
     [<Benchmark>]
     override this.Benchmark() =
-        this.RunBFS()
-        this.Processor.PostAndReply(Msg.MsgNotifyMe)
+        this.BFS()
+        this.Processor.PostAndReply Msg.MsgNotifyMe
 
 type BFSBenchmarksWithTransfer<'elem when 'elem : struct>(
     buildFunToBenchmark,
@@ -150,17 +150,16 @@ type BFSBenchmarksWithTransfer<'elem when 'elem : struct>(
     [<Benchmark>]
     override this.Benchmark() =
         this.LoadMatrixToGPU()
-        this.RunBFS()
-        this.Processor.PostAndReply(Msg.MsgNotifyMe)
+        this.BFS()
         this.ResultLevels.ToHost this.Processor |> ignore
-        this.Processor.PostAndReply(Msg.MsgNotifyMe)
+        this.Processor.PostAndReply Msg.MsgNotifyMe
 
 type BFSBenchmarks4IntWithoutTransfer() =
 
     inherit BFSBenchmarksWithoutDataTransfer<int>(
         (fun context -> singleSource context ArithmeticOperations.intSum ArithmeticOperations.intMul),
         int32,
-        (fun _ -> 1),
+        (fun _ -> Utils.nextInt (System.Random())),
         0)
 
     static member InputMatrixProvider =
@@ -171,7 +170,7 @@ type BFSBenchmarks4IntWithTransfer() =
     inherit BFSBenchmarksWithTransfer<int>(
         (fun context -> singleSource context ArithmeticOperations.intSum ArithmeticOperations.intMul),
         int32,
-        (fun _ -> 1),
+        (fun _ -> Utils.nextInt (System.Random())),
         0)
 
     static member InputMatrixProvider =

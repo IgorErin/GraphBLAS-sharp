@@ -8,7 +8,6 @@ open Brahma.FSharp
 open Brahma.FSharp.OpenCL.Translator
 open Brahma.FSharp.OpenCL.Translator.QuotationTransformers
 open GraphBLAS.FSharp.Backend.Objects
-open MathNet.Numerics.LinearAlgebra
 open OpenCL.Net
 open GraphBLAS.FSharp.IO
 open System.IO
@@ -32,10 +31,10 @@ type TEPSColumn() =
 
             let matrixShape = inputMatrixReader.ReadMatrixShape()
 
-            let (nrows, ncols) =
+            let nrows, ncols =
                 matrixShape.RowCount, matrixShape.ColumnCount
 
-            let (vertices, edges) =
+            let _, edges =
                 match inputMatrixReader.Format with
                 | Coordinate ->
                     if nrows = ncols then
@@ -319,6 +318,9 @@ module Utils =
         |> Gen.map float)
 
     let fIsEqual x y = abs (x - y) < Accuracy.medium.absolute || x.Equals y
+
+    let nextInt (random: System.Random) =
+        random.Next()
 
 module Operations =
     let inline add () = <@ fun x y -> Some(x + y) @>
