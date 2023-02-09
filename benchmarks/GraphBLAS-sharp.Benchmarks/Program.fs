@@ -5,7 +5,8 @@ open BenchmarkDotNet.Running
 let main argv =
         let benchmarks =
             BenchmarkSwitcher
-                [| typeof<Synthetic.MatrixCOOMap2IntWithoutTransferBenchmark>
+                [| typeof<RealData.BFSIntWithoutTransferBenchmark>
+                   typeof<Synthetic.MatrixCOOMap2IntWithoutTransferBenchmark>
                    typeof<Synthetic.MatrixCSRMap2IntWithoutTransferBenchmark>
                    typeof<Synthetic.VectorSparseMap2Int32WithoutTransferBenchmark>
                    typeof<Synthetic.MxmFloatMultiplicationOnlyBenchmark>
