@@ -25,12 +25,34 @@ jobs:
       - name: Benchmark
         run: python3 benchmarks/GraphBLAS-sharp.Benchmarks/Scripts/Benchmark.py
 
-      - name: Charts
+      - name: BFS charts
         uses: rhysd/github-action-benchmark@v1
         with:
           name: BFS
           tool: 'benchmarkdotnet'
-          output-file-path: BenchmarkDotNet.Artifacts/results/GraphBLAS.FSharp.Benchmarks.BFSBenchmarksWithoutDataTransfer-report-brief.json
+          output-file-path: BenchmarkDotNet.Artifacts/results/GraphBLAS.FSharp.Benchmarks.RealData.BFSIntWithoutTransferBenchmark-report-brief.json
+          # Access token to deploy GitHub Pages branch
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Push and deploy GitHub pages branch automatically
+          auto-push: true
+
+      - name: SpMV charts
+        uses: rhysd/github-action-benchmark@v1
+        with:
+          name: SpMV
+          tool: 'benchmarkdotnet'
+          output-file-path: BenchmarkDotNet.Artifacts/results/GraphBLAS.FSharp.Benchmarks.Synthetic.MxvInt32Benchmark-report-brief.json
+          # Access token to deploy GitHub Pages branch
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Push and deploy GitHub pages branch automatically
+          auto-push: true
+
+      - name: SpGEMM charts
+        uses: rhysd/github-action-benchmark@v1
+        with:
+          name: SpGEMM
+          tool: 'benchmarkdotnet'
+          output-file-path: BenchmarkDotNet.Artifacts/results/GraphBLAS.FSharp.Benchmarks.Synthetic.MxmFloatMultiplicationOnlyBenchmark-report-brief.json
           # Access token to deploy GitHub Pages branch
           github-token: ${{ secrets.GITHUB_TOKEN }}
           # Push and deploy GitHub pages branch automatically
