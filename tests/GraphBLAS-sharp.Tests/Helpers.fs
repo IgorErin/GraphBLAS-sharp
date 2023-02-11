@@ -78,8 +78,8 @@ module Generators =
     type SingleMatrix() =
         static let matrixGenerator (valuesGenerator: Gen<'a>) =
             gen {
-                let! nrows, ncols = dimension2DGenerator
-                let! matrix = valuesGenerator |> Gen.array2DOfDim (nrows, ncols)
+                let! rowsCount, columnsCount = dimension2DGenerator
+                let! matrix = valuesGenerator |> Gen.array2DOfDim (rowsCount, columnsCount)
                 return matrix
             }
 
@@ -89,6 +89,15 @@ module Generators =
             |> Arb.fromGen
 
         static member FloatType() =
+            matrixGenerator
+            |> genericSparseGenerator
+                0.
+                (Arb.Default.NormalFloat()
+                 |> Arb.toGen
+                 |> Gen.map float)
+            |> Arb.fromGen
+
+        static member Float32Type() =
             matrixGenerator
             |> genericSparseGenerator
                 0.
