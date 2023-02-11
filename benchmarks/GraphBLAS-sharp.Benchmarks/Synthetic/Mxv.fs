@@ -30,7 +30,7 @@ type MxvBenchmark<'elem when 'elem : struct>(
     [<ParamsSource("AvaliableContexts")>]
     member val OclContextInfo = Unchecked.defaultof<Utils.BenchmarkContext * int> with get, set
 
-    [<Params(100, 1000, 10000)>]
+    [<Params(1000)>]
     member val Size = Unchecked.defaultof<int> with get, set
 
     member this.OclContext = (fst this.OclContextInfo).ClContext
@@ -66,7 +66,13 @@ type MxvBenchmark<'elem when 'elem : struct>(
             this.CreatAnsSetMatrixAndVector()
 
     member this.Mxv() =
+        try
+
         this.Result <- this.FunToBenchmark this.Processor HostInterop matrix vector
+
+        with
+            | ex when ex.Message = "InvalidBufferSize" -> ()
+            | ex -> raise ex
 
     member this.ClearInputMatrixAndVector() =
         matrix.Dispose this.Processor

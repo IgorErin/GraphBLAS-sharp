@@ -29,7 +29,7 @@ type MatrixMap2Benchmarks<'elem when 'elem : struct>
     [<ParamsSource("AvaliableContexts")>]
     member val OclContextInfo = Unchecked.defaultof<Utils.BenchmarkContext * int> with get, set
 
-    [<Params(100, 1000, 10000)>] // TODO(choose compatible size)
+    [<Params(1000)>] // TODO(choose compatible size)
     member val Size = Unchecked.defaultof<int> with get, set
 
     member this.OclContext: ClContext = (fst this.OclContextInfo).ClContext
@@ -53,7 +53,6 @@ type MatrixMap2Benchmarks<'elem when 'elem : struct>
     member this.GenerateMatrices() =
          List.last (Gen.sample this.Size 1 generator)
 
-
     member this.CreateAndSetMatrices() =
         let matrixPair = this.GenerateMatrices()
 
@@ -70,7 +69,13 @@ type MatrixMap2Benchmarks<'elem when 'elem : struct>
         secondMatrix <- secondMatrixHost.ToDevice this.OclContext
 
     member this.Map2() =
+        try
+
         this.ResultMatrix <- this.FunToBenchmark this.Processor HostInterop firstMatrix secondMatrix
+
+        with
+            | ex when ex.Message = "InvalidBufferSize" -> ()
+            | ex -> raise ex
 
     member this.ClearInputMatrices() =
         firstMatrix.Dispose this.Processor

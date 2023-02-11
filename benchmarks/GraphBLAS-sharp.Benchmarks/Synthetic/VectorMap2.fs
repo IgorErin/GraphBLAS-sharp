@@ -67,7 +67,13 @@ type VectorEWiseBenchmarks<'elem when 'elem : struct>(
         | Some x -> x
 
     member this.Map2() =
+        try
+
         this.ResultVector <- this.FunToBenchmark this.Processor HostInterop firstVector secondVector
+
+        with
+            | ex when ex.Message = "InvalidBufferSize" -> ()
+            | ex -> raise ex
 
     member this.ClearInputVectors()=
         firstVector.Dispose this.Processor

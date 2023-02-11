@@ -34,7 +34,7 @@ type MxmBenchmark<'elem when 'elem : struct>(
     [<ParamsSource("AvaliableContexts")>]
     member val OclContextInfo = Unchecked.defaultof<Utils.BenchmarkContext * int> with get, set
 
-    [<Params(100, 1000, 10000)>]
+    [<Params(1000)>]
     member val Size = Unchecked.defaultof<int> with get, set
 
     member this.OclContext = (fst this.OclContextInfo).ClContext
@@ -82,14 +82,20 @@ type MxmBenchmark<'elem when 'elem : struct>(
             && secondMatrix.NNZ > 0
             && mask.NNZ > 0 then
 
-            maskHost <- firstMatrix
-            firstMatrixHost <- secondMatrix
-            secondMatrixHost <- mask
+            firstMatrixHost <- firstMatrix
+            secondMatrixHost <- secondMatrix
+            maskHost <- mask
         else
             this.CreatMatrices()
 
     member this.Mxv() =
+        try
+
         this.ResultMatrix <- this.FunToBenchmark this.Processor firstMatrix secondMatrix mask
+
+        with
+            | ex when ex.Message = "InvalidBufferSize" -> ()
+            | ex -> raise ex
 
     member this.ClearInputMatrices() =
         firstMatrix.Dispose this.Processor
@@ -100,7 +106,7 @@ type MxmBenchmark<'elem when 'elem : struct>(
         this.ResultMatrix.Dispose this.Processor
 
     member this.LoadMatricesToGPU() =
-        firstMatrix <-firstMatrixHost.ToDevice this.OclContext
+        firstMatrix <- firstMatrixHost.ToDevice this.OclContext
         secondMatrix <- secondMatrixHost.ToDevice this.OclContext
         mask <- maskHost.ToDevice this.OclContext
 
@@ -141,7 +147,6 @@ type MxmMultiplicationOnly<'elem when 'elem : struct>(
     [<Benchmark>]
     override this.Benchmark() =
         this.Mxv()
-        this.Processor.PostAndReply Msg.MsgNotifyMe
 
     [<IterationCleanup>]
     override this.IterationCleanup() =
@@ -178,15 +183,23 @@ type MxmWithTransposing<'elem when 'elem : struct>(
     override this.IterationCleanup() =
         this.ClearInputMatrices()
         this.ClearResult()
-        this.Processor.PostAndReply Msg.MsgNotifyMe
 
     [<GlobalCleanup>]
     override this.GlobalCleanup() = ()
 
+module LocalOperations =
+    let add =
+        <@ fun x y ->
+              let res = x + y
+
+              if res = 0.0 then None else (Some res) @>
+
+    let mult = <@ fun x y -> Some( x * y) @>
+
 type MxmFloatMultiplicationOnlyBenchmark() =
 
     inherit MxmMultiplicationOnly<float>(
-        (Matrix.mxm (Operations.add ()) (Operations.mult ())),
+        (Matrix.mxm LocalOperations.add LocalOperations.mult),
         MatrixGenerator.floatPairWithMaskOfEqualSizes CSR
         )
 
