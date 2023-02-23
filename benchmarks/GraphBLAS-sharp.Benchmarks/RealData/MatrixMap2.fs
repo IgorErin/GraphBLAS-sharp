@@ -15,7 +15,7 @@ open GraphBLAS.FSharp.Benchmarks
 [<AbstractClass>]
 [<IterationCount(100)>]
 [<WarmupCount(10)>]
-[<Config(typeof<Config>)>]
+[<Config(typeof<Configs.Config>)>]
 type Map2Benchmarks<'matrixT, 'elem when 'matrixT :> IDeviceMemObject and 'elem : struct>(
         buildFunToBenchmark,
         converter: string -> 'elem,

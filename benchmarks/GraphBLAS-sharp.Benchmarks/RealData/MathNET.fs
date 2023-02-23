@@ -12,7 +12,7 @@ open GraphBLAS.FSharp.Benchmarks
 [<AbstractClass>]
 [<IterationCount(100)>]
 [<WarmupCount(10)>]
-[<Config(typeof<Config>)>]
+[<Config(typeof<Configs.Config>)>]
 type MathNETBenchmark<'elem when 'elem: struct and 'elem :> System.IEquatable<'elem> and 'elem :> System.IFormattable and 'elem :> System.ValueType and 'elem: (new :
     unit -> 'elem)>(converter: string -> 'elem, converterBool) =
     do Control.UseNativeMKL()

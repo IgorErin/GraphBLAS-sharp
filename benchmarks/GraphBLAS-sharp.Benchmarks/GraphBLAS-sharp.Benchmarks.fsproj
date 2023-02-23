@@ -16,6 +16,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Columns.fs" />
+    <Compile Include="Configs.fs" />
     <Compile Include="Helpers.fs" />
     <!--Compile Include="BenchmarksBFS.fs" /-->
     <!--Compile Include="BenchmarksTranspose.fs" /-->

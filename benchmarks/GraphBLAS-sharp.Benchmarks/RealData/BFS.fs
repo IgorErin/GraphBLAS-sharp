@@ -15,7 +15,7 @@ open GraphBLAS.FSharp.Backend.Objects
 [<AbstractClass>]
 [<IterationCount(100)>]
 [<WarmupCount(10)>]
-[<Config(typeof<SingleMatrixConfig>)>]
+[<Config(typeof<Configs.SingleMatrixConfig>)>]
 type BFSBenchmarks<'elem when 'elem : struct>(
     buildFunToBenchmark,
     converter: string -> 'elem,

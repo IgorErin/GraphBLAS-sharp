@@ -13,7 +13,7 @@ open GraphBLAS.FSharp.Backend.Objects.ClContext
 [<AbstractClass>]
 [<IterationCount(100)>]
 [<WarmupCount(10)>]
-[<Config(typeof<Config>)>]
+[<Config(typeof<Configs.MinMaxMeanConfig>)>]
 type MatrixMap2Benchmarks<'elem when 'elem : struct>
     (buildFunToBenchmark,
     generator: Gen<Matrix<_>*Matrix<_>>) =

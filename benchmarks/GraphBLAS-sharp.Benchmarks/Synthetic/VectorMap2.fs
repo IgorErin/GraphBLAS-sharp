@@ -2,8 +2,7 @@ namespace GraphBLAS.FSharp.Benchmarks.Synthetic
 
 open FsCheck
 open BenchmarkDotNet.Attributes
-open BenchmarkDotNet.Configs
-open BenchmarkDotNet.Columns
+
 open Brahma.FSharp
 open GraphBLAS.FSharp.Backend.Objects
 open GraphBLAS.FSharp.Backend.Quotes
@@ -14,20 +13,10 @@ open GraphBLAS.FSharp.Objects.ClVectorExtensions
 open GraphBLAS.FSharp.Backend.Vector
 open GraphBLAS.FSharp.Backend.Objects.ClContext
 
-type VectorConfig() =
-    inherit ManualConfig()
-
-    do
-        base.AddColumn(
-            StatisticColumn.Min,
-            StatisticColumn.Max
-        )
-        |> ignore
-
 [<AbstractClass>]
 [<IterationCount(100)>]
 [<WarmupCount(10)>]
-[<Config(typeof<VectorConfig>)>]
+[<Config(typeof<Configs.MinMaxMeanConfig>)>]
 type VectorEWiseBenchmarks<'elem when 'elem : struct>(
     buildFunToBenchmark,
     generator: Gen<Vector<'elem> * Vector<'elem>>) =

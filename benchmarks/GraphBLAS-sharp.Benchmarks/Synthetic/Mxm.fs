@@ -12,7 +12,7 @@ open GraphBLAS.FSharp.Benchmarks
 [<AbstractClass>]
 [<IterationCount(100)>]
 [<WarmupCount(10)>]
-[<Config(typeof<Config>)>]
+[<Config(typeof<Configs.MinMaxMeanConfig>)>]
 type MxmBenchmark<'elem when 'elem : struct>(
         buildFunToBenchmark,
         generator: Gen<Matrix<_>*Matrix<_>*Matrix<_>>) =

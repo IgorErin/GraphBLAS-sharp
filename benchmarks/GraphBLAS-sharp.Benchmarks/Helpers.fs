@@ -1,198 +1,15 @@
 namespace GraphBLAS.FSharp.Benchmarks
 
-open BenchmarkDotNet.Columns
-open BenchmarkDotNet.Reports
-open BenchmarkDotNet.Running
-open BenchmarkDotNet.Toolchains.InProcess.Emit
 open Brahma.FSharp
 open Brahma.FSharp.OpenCL.Translator
 open Brahma.FSharp.OpenCL.Translator.QuotationTransformers
 open GraphBLAS.FSharp.Backend.Objects
 open OpenCL.Net
-open GraphBLAS.FSharp.IO
 open System.IO
 open System.Text.RegularExpressions
-open BenchmarkDotNet.Configs
-open BenchmarkDotNet.Jobs
 open GraphBLAS.FSharp.Tests
 open FsCheck
 open Expecto
-
-type TEPSColumn() =
-    interface IColumn with
-        member this.AlwaysShow: bool = true
-        member this.Category: ColumnCategory = ColumnCategory.Statistics
-        member this.ColumnName: string = "TEPS"
-
-        member this.GetValue(summary: Summary, benchmarkCase: BenchmarkCase) : string =
-            let inputMatrixReader =
-                benchmarkCase.Parameters.["InputMatrixReader"] :?> MtxReader * MtxReader
-                |> fst
-
-            let matrixShape = inputMatrixReader.ReadMatrixShape()
-
-            let nrows, ncols =
-                matrixShape.RowCount, matrixShape.ColumnCount
-
-            let _, edges =
-                match inputMatrixReader.Format with
-                | Coordinate ->
-                    if nrows = ncols then
-                        (nrows, matrixShape.Nnz)
-                    else
-                        (ncols, nrows)
-                | _ -> failwith "Unsupported"
-
-            if isNull summary.[benchmarkCase].ResultStatistics then
-                "NA"
-            else
-                let meanTime =
-                    summary.[benchmarkCase].ResultStatistics.Mean
-
-                sprintf "%f" <| float edges / (meanTime * 1e-6)
-
-        member this.GetValue(summary: Summary, benchmarkCase: BenchmarkCase, style: SummaryStyle) : string =
-            (this :> IColumn).GetValue(summary, benchmarkCase)
-
-        member this.Id: string = "TEPSColumn"
-        member this.IsAvailable(summary: Summary) : bool = true
-        member this.IsDefault(summary: Summary, benchmarkCase: BenchmarkCase) : bool = false
-        member this.IsNumeric: bool = true
-        member this.Legend: string = "Traversed edges per second"
-        member this.PriorityInCategory: int = 0
-        member this.UnitType: UnitType = UnitType.Dimensionless
-
-type MatrixColumn(columnName: string, getShape: MtxReader -> int) =
-    interface IColumn with
-        member this.AlwaysShow: bool = true
-        member this.Category: ColumnCategory = ColumnCategory.Params
-        member this.ColumnName: string = columnName
-
-        member this.GetValue(summary: Summary, benchmarkCase: BenchmarkCase) : string =
-            benchmarkCase.Parameters.["InputMatrixReader"] :?> MtxReader
-            |> getShape
-            |> sprintf "%i"
-
-        member this.GetValue(summary: Summary, benchmarkCase: BenchmarkCase, style: SummaryStyle) : string =
-            (this :> IColumn).GetValue(summary, benchmarkCase)
-
-        member this.Id: string =
-            sprintf "%s.%s" "MatrixColumn" columnName
-
-        member this.IsAvailable(_: Summary) : bool = true
-        member this.IsDefault(_: Summary, _: BenchmarkCase) : bool = false
-        member this.IsNumeric: bool = true
-        member this.Legend: string = sprintf "%s of input matrix" columnName
-        member this.PriorityInCategory: int = 1
-        member this.UnitType: UnitType = UnitType.Size
-
-type MatrixPairColumn(columnName: string, getShape: (MtxReader * MtxReader) -> int) =
-    interface IColumn with
-        member this.AlwaysShow: bool = true
-        member this.Category: ColumnCategory = ColumnCategory.Params
-        member this.ColumnName: string = columnName
-
-        member this.GetValue(summary: Summary, benchmarkCase: BenchmarkCase) : string =
-            let inputMatrix =
-                benchmarkCase.Parameters.["InputMatrixReader"] :?> MtxReader * MtxReader
-
-            sprintf "%i" <| getShape inputMatrix
-
-        member this.GetValue(summary: Summary, benchmarkCase: BenchmarkCase, style: SummaryStyle) : string =
-            (this :> IColumn).GetValue(summary, benchmarkCase)
-
-        member this.Id: string =
-            sprintf "%s.%s" "MatrixShapeColumn" columnName
-
-        member this.IsAvailable(_: Summary) : bool = true
-        member this.IsDefault(_: Summary, _: BenchmarkCase) : bool = false
-        member this.IsNumeric: bool = true
-        member this.Legend: string = sprintf "%s of input matrix" columnName
-        member this.PriorityInCategory: int = 1
-        member this.UnitType: UnitType = UnitType.Size
-
-type CommonConfig() =
-    inherit ManualConfig()
-
-    do
-        base.AddColumn(
-            MatrixPairColumn("RowCount", (fun (mtxReader, _) -> mtxReader.ReadMatrixShape().RowCount)) :> IColumn,
-            MatrixPairColumn("ColumnCount", (fun (mtxReader, _) -> mtxReader.ReadMatrixShape().ColumnCount)) :> IColumn,
-            MatrixPairColumn("NNZ", (fun (mtxReader, _) -> mtxReader.ReadMatrixShape().Nnz)) :> IColumn,
-            MatrixPairColumn("SqrNNZ", (fun (_, mtxReader) -> mtxReader.ReadMatrixShape().Nnz)) :> IColumn,
-            TEPSColumn() :> IColumn,
-            StatisticColumn.Min,
-            StatisticColumn.Max
-        )
-        |> ignore
-
-        base.AddJob(
-            Job
-                .Dry
-                .WithWarmupCount(3)
-                .WithIterationCount(10)
-                .WithInvocationCount(3)
-        )
-        |> ignore
-
-type Config() =
-    inherit ManualConfig()
-
-    do
-        base.AddColumn(
-            MatrixPairColumn("RowCount", (fun (matrix,_) -> matrix.ReadMatrixShape().RowCount)) :> IColumn,
-            MatrixPairColumn("ColumnCount", (fun (matrix,_) -> matrix.ReadMatrixShape().ColumnCount)) :> IColumn,
-            MatrixPairColumn(
-                "NNZ",
-                fun (matrix,_) ->
-                    match matrix.Format with
-                    | Coordinate -> matrix.ReadMatrixShape().Nnz
-                    | Array -> 0
-            )
-            :> IColumn,
-            MatrixPairColumn(
-                "SqrNNZ",
-                fun (_,matrix) ->
-                    match matrix.Format with
-                    | Coordinate -> matrix.ReadMatrixShape().Nnz
-                    | Array -> 0
-            )
-            :> IColumn,
-            TEPSColumn() :> IColumn,
-            StatisticColumn.Min,
-            StatisticColumn.Max
-        )
-        |> ignore
-
-type SingleMatrixConfig() =
-    inherit ManualConfig()
-
-    do
-        base.AddColumn(
-            MatrixColumn("RowCount", (fun matrix -> matrix.ReadMatrixShape().RowCount)) :> IColumn,
-            MatrixColumn("ColumnCount", (fun matrix -> matrix.ReadMatrixShape().ColumnCount)) :> IColumn,
-            MatrixColumn(
-                "NNZ",
-                fun matrix ->
-                    match matrix.Format with
-                    | Coordinate -> matrix.ReadMatrixShape().Nnz
-                    | Array -> 0
-            )
-            :> IColumn,
-            StatisticColumn.Min,
-            StatisticColumn.Max
-        )
-        |> ignore
-
-        base.AddJob(
-            Job
-                .Dry
-                .WithToolchain(InProcessEmitToolchain.Instance)
-                .WithWarmupCount(3)
-                .WithIterationCount(10)
-                .WithInvocationCount(3)
-        )
-        |> ignore
 
 module Utils =
     type BenchmarkContext =
@@ -282,7 +99,7 @@ module Utils =
                             .GetDeviceInfo(device, DeviceInfo.Type, &e)
                             .CastTo<DeviceType>()
 
-                    let clDeviceType =
+                    let _ =
                         match deviceType with
                         | DeviceType.Cpu -> ClDeviceType.Cpu
                         | DeviceType.Gpu -> ClDeviceType.Gpu
