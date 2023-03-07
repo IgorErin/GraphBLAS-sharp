@@ -10,6 +10,7 @@ open System.Text.RegularExpressions
 open GraphBLAS.FSharp.Tests
 open FsCheck
 open Expecto
+open GraphBLAS.FSharp.Test
 
 module Utils =
     type BenchmarkContext =
@@ -170,7 +171,7 @@ module Operations =
 module VectorGenerator =
     let private pairOfVectorsOfEqualSize (valuesGenerator: Gen<'a>) createVector =
         gen {
-            let! length = Gen.sized <| fun size -> Gen.constant size
+            let! length = Gen.sized <| Gen.constant
 
             let! leftArray = Gen.arrayOfLength length valuesGenerator
 
@@ -249,5 +250,4 @@ module MatrixVectorGenerator =
         let createMatrix array = Utils.createMatrixFromArray2D matrixFormat array (Utils.floatIsEqual 0.0)
 
         pairOfMatricesAndVectorGenerator Utils.normalFloatGenerator createVector createMatrix
-
 

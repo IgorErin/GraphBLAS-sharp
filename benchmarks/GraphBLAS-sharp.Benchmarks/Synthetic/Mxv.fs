@@ -132,7 +132,7 @@ type MxvInt32Benchmark() =
         MatrixVectorGenerator.intPairOfCompatibleSizes CSR Dense
         )
 
-type MxvFloatSyntheticBenchmark() =
+type MxvFloatBenchmark() =
 
     inherit MxvMultiplicationOnly<float>(
         (fun wgSize -> SpMV.run wgSize ArithmeticOperations.floatSum ArithmeticOperations.floatMul),

@@ -1,15 +1,11 @@
 namespace GraphBLAS.FSharp.Tests
 
 open Brahma.FSharp.OpenCL.Translator
-open FsCheck
-open GraphBLAS.FSharp
 open Microsoft.FSharp.Reflection
 open Brahma.FSharp
 open OpenCL.Net
-open Expecto.Logging
-open Expecto.Logging.Message
+open GraphBLAS.FSharp.Test
 open System.Text.RegularExpressions
-open FSharp.Quotations.Evaluator
 open Expecto
 open GraphBLAS.FSharp.Objects
 open GraphBLAS.FSharp.Backend.Objects
@@ -693,7 +689,9 @@ module Generators =
             pairOfVectorsOfEqualSize <| Arb.generate<bool>
             |> Arb.fromGen
 
+[<RequireQualifiedAccess>]
 module Utils =
+    let defaultWorkGroupSize = 32
 
     let defaultConfig =
         { FsCheckConfig.defaultConfig with
@@ -704,15 +702,20 @@ module Utils =
                   [ typeof<Generators.SingleMatrix>
                     typeof<Generators.PairOfSparseMatricesOfEqualSize>
                     typeof<Generators.PairOfMatricesOfCompatibleSize>
-                    typeof<Generators.PairOfSparseMatrixOAndVectorfCompatibleSize>
+                    typeof<Generators.PairOfSparseMatrixAndVectorsCompatibleSize>
                     typeof<Generators.PairOfSparseVectorAndMatrixOfCompatibleSize>
                     typeof<Generators.ArrayOfDistinctKeys>
                     typeof<Generators.ArrayOfAscendingKeys>
-                    typeof<Generators.BufferCompatibleVector>
-                    typeof<Generators.PairOfVectorsOfEqualSize> ] }
+                    typeof<Generators.BufferCompatibleArray>
+                    typeof<Generators.PairOfVectorsOfEqualSize>
+                    typeof<Generators.PairOfArraysAndValue> ] }
 
     let floatIsEqual x y =
         abs (x - y) < Accuracy.medium.absolute
+        || x.Equals y
+
+    let inline float32IsEqual x y =
+        float (abs (x - y)) < Accuracy.medium.absolute
         || x.Equals y
 
     let vectorToDenseVector =
@@ -765,17 +768,13 @@ module Utils =
             array
 
     let compareArrays areEqual (actual: 'a []) (expected: 'a []) message =
-        sprintf "%s. Lengths should be equal. Actual is %A, expected %A" message actual expected
+        $"%s{message}. Lengths should be equal. Actual is %A{actual}, expected %A{expected}"
         |> Expect.equal actual.Length expected.Length
 
         for i in 0 .. actual.Length - 1 do
             if not (areEqual actual.[i] expected.[i]) then
-                sprintf "%s. Arrays differ at position %A of %A. Actual value is %A, expected %A"
-                <| message
-                <| i
-                <| (actual.Length - 1)
-                <| actual.[i]
-                <| expected.[i]
+                $"%s{message}. Arrays differ at position %A{i} of %A{actual.Length - 1}.
+                Actual value is %A{actual.[i]}, expected %A{expected.[i]}"
                 |> failtestf "%s"
 
     let listOfUnionCases<'a> =
@@ -795,6 +794,19 @@ module Utils =
                 (cartesian t)
         | _ -> []
 
+    let isFloat64Available (context: ClDevice) =
+        Array.contains CL_KHR_FP64 context.DeviceExtensions
+
+    let transpose2DArray array =
+        let result =
+            Array2D.zeroCreate (Array2D.length2 array) (Array2D.length1 array)
+
+        for i in 0 .. Array2D.length1 result - 1 do
+            for j in 0 .. Array2D.length2 result - 1 do
+                result.[i, j] <- array.[j, i]
+
+        result
+
 module Context =
     type TestContext =
         { ClContext: ClContext
@@ -813,7 +825,7 @@ module Context =
                     .ToString())
         |> Seq.filter
             (fun device ->
-                let isAvaliable =
+                let isAvailable =
                     Cl
                         .GetDeviceInfo(device, DeviceInfo.Available, &e)
                         .CastTo<bool>()
@@ -829,7 +841,7 @@ module Context =
                         .ToString()
 
                 (Regex platformRegex).IsMatch platformName
-                && isAvaliable)
+                && isAvailable)
         |> Seq.map
             (fun device ->
                 let platform =
