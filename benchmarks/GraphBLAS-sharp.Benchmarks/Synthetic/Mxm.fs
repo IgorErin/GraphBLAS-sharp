@@ -34,7 +34,7 @@ type MxmBenchmark<'elem when 'elem : struct>(
     [<ParamsSource("AvaliableContexts")>]
     member val OclContextInfo = Unchecked.defaultof<Utils.BenchmarkContext * int> with get, set
 
-    [<Params(1000)>]
+    [<Params(100)>]
     member val Size = Unchecked.defaultof<int> with get, set
 
     member this.OclContext = (fst this.OclContextInfo).ClContext
@@ -194,7 +194,7 @@ module LocalOperations =
 
               if res = 0.0 then None else (Some res) @>
 
-    let mult = <@ fun x y -> Some( x * y) @>
+    let mult = <@ fun x y -> Some(x * y) @>
 
 type MxmFloatMultiplicationOnlyBenchmark() =
 

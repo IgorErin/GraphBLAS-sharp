@@ -230,7 +230,7 @@ type MatrixCSRMap2BoolWithoutTransferBenchmark() =
     static member InputMatricesProvider =
         Map2Benchmarks<_, _>.InputMatricesProviderBuilder "EWiseAddBenchmarks4BoolCSR.txt"
 
-// With AtLeastOne
+// AtLeastOne
 
 type MatrixCOOMap2AtLeastOne4BoolWithoutTransferBenchmark() =
 

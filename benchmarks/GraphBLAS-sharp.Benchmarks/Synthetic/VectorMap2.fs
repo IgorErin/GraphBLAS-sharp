@@ -188,7 +188,7 @@ type VectorSparseMap2Int32WithTransferBenchmark() =
         (fun context -> Vector.map2 context ArithmeticOperations.intSum),
         VectorGenerator.intPair Sparse)
 
-/// General with data transfer
+/// Map2 with data transfer
 type VectorMap2GeneralFloatSparseWithTransferBenchmark() =
 
     inherit VectorEWiseBenchmarksWithDataTransfer<float>(

@@ -1,1 +1,6 @@
-BFSBenchmark
+BFSIntWithoutTransferBenchmark
+VectorSparseMap2Int32WithoutTransferBenchmark
+MatrixCOOMap2IntWithoutTransferBenchmark
+MatrixCSRMap2IntWithoutTransferBenchmark
+MxmFloatMultiplicationOnlyBenchmark
+MxvInt32Benchmark

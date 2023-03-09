@@ -124,6 +124,7 @@ type MatrixMap2WithoutTransfer<'elem when 'elem : struct>(
     [<GlobalCleanup>]
     override this.GlobalCleanup() = ()
 
+/// Int map benchmarks
 type MatrixCOOMap2IntWithoutTransferBenchmark() =
 
     inherit MatrixMap2WithoutTransfer<int>(
@@ -136,6 +137,7 @@ type MatrixCSRMap2IntWithoutTransferBenchmark() =
         (fun clContext -> Matrix.map2 clContext ArithmeticOperations.intSum),
         MatrixGenerator.intPairOfEqualSizes CSR)
 
+/// Float map benchmarks
 type MatrixCOOMap2FloatWithoutTransferBenchmark() =
 
     inherit MatrixMap2WithoutTransfer<float>(
@@ -146,4 +148,30 @@ type MatrixCSRMap2FloatWithoutTransferBenchmark() =
 
     inherit MatrixMap2WithoutTransfer<float>(
         (fun clContext -> Matrix.map2 clContext ArithmeticOperations.floatSum),
+        MatrixGenerator.floatPairOfEqualSizes CSR)
+
+/// Int map AtLeastOne benchmarks
+type MatrixCOOMapAtLeastOne2IntWithoutTransferBenchmark() =
+
+    inherit MatrixMap2WithoutTransfer<int>(
+        (fun clContext -> Matrix.map2AtLeastOne clContext ArithmeticOperations.intSumAtLeastOne),
+        MatrixGenerator.intPairOfEqualSizes COO)
+
+type MatrixCSRMap2AtLeastOneIntWithoutTransferBenchmark() =
+
+    inherit MatrixMap2WithoutTransfer<int>(
+        (fun clContext -> Matrix.map2AtLeastOne clContext ArithmeticOperations.intSumAtLeastOne),
+        MatrixGenerator.intPairOfEqualSizes CSR)
+
+/// Float map AtLeastOne benchmarks
+type MatrixCOOMap2AtLeastOneFloatWithoutTransferBenchmark() =
+
+    inherit MatrixMap2WithoutTransfer<float>(
+        (fun clContext -> Matrix.map2AtLeastOne clContext ArithmeticOperations.floatSumAtLeastOne),
+        MatrixGenerator.floatPairOfEqualSizes COO)
+
+type MatrixCSRMap2AtLeastOneFloatWithoutTransferBenchmark() =
+
+    inherit MatrixMap2WithoutTransfer<float>(
+        (fun clContext -> Matrix.map2AtLeastOne clContext ArithmeticOperations.floatSumAtLeastOne),
         MatrixGenerator.floatPairOfEqualSizes CSR)

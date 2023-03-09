@@ -1,14 +1,10 @@
 name: Benchmark GraphBLAS-sharp
 
-<<<<<<< HEAD
-on: [push]
-=======
 on:
   push:
     paths-ignore:
       - 'docs/benchmarks/**'
   workflow_dispatch:
->>>>>>> dev
 
 permissions:
   contents: write
@@ -28,55 +24,18 @@ jobs:
         run: clinfo
 
       - name: Build GraphBLAS-sharp
-<<<<<<< HEAD
-        run: dotnet build -c Release
-=======
         run: |
           dotnet tool restore
           dotnet build -c Release
->>>>>>> dev
 
       - name: Benchmark
         run: python3 benchmarks/GraphBLAS-sharp.Benchmarks/Scripts/Benchmark.py
 
-<<<<<<< HEAD
-      - name: BFS charts
-=======
       - name: Charts
->>>>>>> dev
         uses: rhysd/github-action-benchmark@v1
         with:
           name: BFS
           tool: 'benchmarkdotnet'
-<<<<<<< HEAD
-          output-file-path: BenchmarkDotNet.Artifacts/results/GraphBLAS.FSharp.Benchmarks.RealData.BFSIntWithoutTransferBenchmark-report-brief.json
-          # Access token to deploy GitHub Pages branch
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          # Push and deploy GitHub pages branch automatically
-          auto-push: true
-
-      - name: SpMV charts
-        uses: rhysd/github-action-benchmark@v1
-        with:
-          name: SpMV
-          tool: 'benchmarkdotnet'
-          output-file-path: BenchmarkDotNet.Artifacts/results/GraphBLAS.FSharp.Benchmarks.Synthetic.MxvInt32Benchmark-report-brief.json
-          # Access token to deploy GitHub Pages branch
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          # Push and deploy GitHub pages branch automatically
-          auto-push: true
-
-      - name: SpGEMM charts
-        uses: rhysd/github-action-benchmark@v1
-        with:
-          name: SpGEMM
-          tool: 'benchmarkdotnet'
-          output-file-path: BenchmarkDotNet.Artifacts/results/GraphBLAS.FSharp.Benchmarks.Synthetic.MxmFloatMultiplicationOnlyBenchmark-report-brief.json
-          # Access token to deploy GitHub Pages branch
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          # Push and deploy GitHub pages branch automatically
-          auto-push: true
-=======
           output-file-path: BenchmarkDotNet.Artifacts/results/GraphBLAS.FSharp.Benchmarks.BFSBenchmarksWithoutDataTransfer-report-brief.json
           # Access token to deploy GitHub Pages branch
           github-token: ${{ secrets._GITHUB_TOKEN }}
@@ -85,4 +44,3 @@ jobs:
           gh-pages-branch: master
           benchmark-data-dir-path: docs/benchmarks
           skip-fetch-gh-pages: true
->>>>>>> dev
