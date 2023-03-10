@@ -10,4 +10,6 @@ module ClCell =
 
             processor.Post(Msg.CreateFreeMsg<_>(this))
 
+            processor.PostAndReply <| Msg.MsgNotifyMe // blocking
+
             res.[0]

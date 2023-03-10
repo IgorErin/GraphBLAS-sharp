@@ -57,7 +57,10 @@ module ClArray =
                 Range1D.CreateValid(length, workGroupSize)
 
             processor.Post(Msg.MsgSetArguments(fun () -> kernel.KernelFunc ndRange outputArray length value))
+
             processor.Post(Msg.CreateRunMsg<_, _> kernel)
+            processor.PostAndReply <| Msg.MsgNotifyMe // blocking
+
             processor.Post(Msg.CreateFreeMsg(value))
 
             outputArray
@@ -296,6 +299,7 @@ module ClArray =
             processor.Post(Msg.MsgSetArguments(fun () -> kernel.KernelFunc ndRange vector.Length vector result))
 
             processor.Post(Msg.CreateRunMsg<_, _>(kernel))
+            processor.PostAndReply <| Msg.MsgNotifyMe // blocking
 
             result
 
@@ -353,6 +357,7 @@ module ClArray =
             )
 
             processor.Post(Msg.CreateRunMsg<_, _>(kernel))
+            processor.PostAndReply <| Msg.MsgNotifyMe // blocking
 
     let map2<'a, 'b, 'c> (clContext: ClContext) workGroupSize map =
         let map2 =

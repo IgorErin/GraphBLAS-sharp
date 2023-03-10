@@ -1,4 +1,4 @@
-open System.IO
+﻿open System.IO
 open GraphBLAS.FSharp.Backend.Matrix
 open GraphBLAS.FSharp.Backend.Quotes
 
@@ -7,7 +7,6 @@ open GraphBLAS.FSharp.Backend.Algorithms
 open GraphBLAS.FSharp.IO
 open GraphBLAS.FSharp.Backend.Objects.ClContext
 open GraphBLAS.FSharp.Backend.Objects
-
 [<EntryPoint>]
 let main _ =
     let context = Context.defaultContext

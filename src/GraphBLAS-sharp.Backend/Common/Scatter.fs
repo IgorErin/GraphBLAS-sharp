@@ -56,3 +56,4 @@ module internal Scatter =
             )
 
             processor.Post(Msg.CreateRunMsg<_, _>(kernel))
+            processor.PostAndReply <| Msg.MsgNotifyMe // blocking

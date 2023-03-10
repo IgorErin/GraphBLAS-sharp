@@ -275,6 +275,9 @@ BenchmarkDotNet.Artifacts/
 # Folder for datasets
 benchmarks/GraphBLAS-sharp.Benchmarks/Datasets
 
+# Matrices
+*.mtx 
+
 dmp_tmp/GraphBLAS-sharp/
 
 dmp_tmp/

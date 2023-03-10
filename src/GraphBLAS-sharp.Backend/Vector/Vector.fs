@@ -72,6 +72,8 @@ module Vector =
 
                 scatter processor indices mappedValues result
 
+                processor.PostAndReply <| Msg.MsgNotifyMe // blocking
+
                 processor.Post(Msg.CreateFreeMsg(mappedValues))
                 processor.Post(Msg.CreateFreeMsg(indices))
                 processor.Post(Msg.CreateFreeMsg(values))

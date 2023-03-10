@@ -54,6 +54,8 @@ module BFS =
                 while not stop do
                     level <- level + 1
 
+                    printfn "level: %d" level
+
                     //Assigning new level values
                     fillSubVectorTo queue levels front (clContext.CreateClCell level) levels
 

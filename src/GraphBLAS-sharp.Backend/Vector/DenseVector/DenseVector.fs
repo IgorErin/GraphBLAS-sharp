@@ -70,6 +70,7 @@ module DenseVector =
             )
 
             processor.Post(Msg.CreateRunMsg<_, _>(kernel))
+            processor.PostAndReply <| Msg.MsgNotifyMe // blocking
 
     let assignByMask<'a, 'b when 'a: struct and 'b: struct>
         (clContext: ClContext)

@@ -140,6 +140,7 @@ module SpMV =
             )
 
             queue.Post(Msg.CreateRunMsg<_, _>(reduceValuesByRows))
+            queue.PostAndReply <| Msg.MsgNotifyMe // blocking
 
             queue.Post(Msg.CreateFreeMsg intermediateArray)
 
