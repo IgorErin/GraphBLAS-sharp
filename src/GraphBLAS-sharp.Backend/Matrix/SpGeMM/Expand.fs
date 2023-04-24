@@ -117,7 +117,7 @@ module Expand =
 
                 rightMatrixGather processor rightMatrixPositions rightMatrix.Values rightMatrixValues
 
-                rightMatrixPositions.Free processor
+                rightMatrixPositions.FreeAndWait processor
 
                 // left, right matrix values, columns indices
                 Some(leftMatrixValues, rightMatrixValues, columns)
@@ -145,6 +145,7 @@ module Expand =
                     .ToHostAndFree(processor)
 
             if resultLength = 0 then
+                positions.Free processor
                 None
             else
                 let resultIndices =
@@ -156,6 +157,8 @@ module Expand =
                     clContext.CreateClArrayWithSpecificAllocationMode(DeviceOnly, resultLength)
 
                 assignValues processor firstValues secondValues positions resultValues
+
+                positions.FreeAndWait processor
 
                 Some(resultValues, resultIndices)
 
@@ -173,6 +176,8 @@ module Expand =
                 sortByKeyValues processor DeviceOnly columns values
 
             let sortedColumns = sortKeys processor columns
+
+            processor.PostAndReply(MsgNotifyMe)
 
             sortedValues, sortedColumns
 
@@ -209,7 +214,7 @@ module Expand =
             let reduceResult = // by size variance TODO()
                 reduce processor allocationMode uniqueKeysCount offsets columns values
 
-            offsets.Free processor
+            offsets.FreeAndWait processor
 
             reduceResult
 
@@ -264,7 +269,7 @@ module Expand =
                                 reduce processor allocationMode sortedValues sortedColumns
 
                             sortedValues.Free processor
-                            sortedColumns.Free processor
+                            sortedColumns.FreeAndWait processor
 
                             // create sparse vector (TODO(empty vector))
                             reduceResult
@@ -300,30 +305,31 @@ module Expand =
             let runRow =
                 runRow processor allocationMode rightMatrix rightMatrixRowsLengths
 
-            split processor allocationMode leftMatrix
-            |> Seq.map (fun lazyRow ->
-                Option.bind (fun row ->
-                    let result = runRow row
-                    row.Dispose processor
+            let resultRows =
+                split processor allocationMode leftMatrix
+                |> Seq.map (fun lazyRow ->
+                    Option.bind (fun row ->
+                        let result = runRow row
+                        row.Dispose processor
 
-                    result
-                ) lazyRow.Value)
-            |> Seq.toArray
-            |> fun rows ->
-                rightMatrixRowsLengths.Free processor
+                        result
+                    ) lazyRow.Value)
+                |> Seq.toArray
 
-                // compute nnz
-                let nnz =
-                    rows
-                    |> Seq.fold
-                        (fun count ->
-                            function
-                            | Some row -> count + row.Size
-                            | None -> count)
-                        0
+            rightMatrixRowsLengths.Free processor
 
-                { LIL.Context = clContext
-                  RowCount = leftMatrix.RowCount
-                  ColumnCount = rightMatrix.ColumnCount
-                  Rows = rows
-                  NNZ = nnz }
+            // compute nnz
+            let nnz =
+                resultRows
+                |> Seq.fold
+                    (fun count ->
+                        function
+                        | Some row -> count + row.Size
+                        | None -> count)
+                    0
+
+            { LIL.Context = clContext
+              RowCount = leftMatrix.RowCount
+              ColumnCount = rightMatrix.ColumnCount
+              Rows = resultRows
+              NNZ = nnz }
