@@ -302,34 +302,21 @@ module Expand =
             let rightMatrixRowsLengths =
                 getNNZInRows processor DeviceOnly rightMatrix
 
-            let runRow =
-                runRow processor allocationMode rightMatrix rightMatrixRowsLengths
+            let leftMatrixLazyRows = split processor allocationMode leftMatrix
 
-            let resultRows =
-                split processor allocationMode leftMatrix
-                |> Seq.map (fun lazyRow ->
-                    Option.bind (fun row ->
-                        let result = runRow row
-                        row.Dispose processor
+            let result = Array.zeroCreate leftMatrix.RowCount
 
-                        result
-                    ) lazyRow.Value)
-                |> Seq.toArray
+            for i in 0 .. Seq.length leftMatrixLazyRows do
+                let row = (Seq.item i leftMatrixLazyRows).Value
+                match row with
+                | Some row ->
+                    let resultRow = runRow processor allocationMode rightMatrix rightMatrixRowsLengths row
 
-            rightMatrixRowsLengths.Free processor
-
-            // compute nnz
-            let nnz =
-                resultRows
-                |> Seq.fold
-                    (fun count ->
-                        function
-                        | Some row -> count + row.Size
-                        | None -> count)
-                    0
+                    result.[i] <- resultRow
+                | None -> ()
 
             { LIL.Context = clContext
               RowCount = leftMatrix.RowCount
               ColumnCount = rightMatrix.ColumnCount
-              Rows = resultRows
-              NNZ = nnz }
+              Rows = result
+              NNZ = 0 }
